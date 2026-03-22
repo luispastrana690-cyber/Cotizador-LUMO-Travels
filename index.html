@@ -4,53 +4,224 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Propuestas | LUMO Travels</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script>
-        tailwind.config = {
-            theme: { extend: { colors: { lumo: '#E6FF00', dark: '#2D2D2D' } } }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
-        body { font-family: 'Montserrat', sans-serif; background: #f3f4f6; }
 
-        /* ── Loading ── */
+    <style>
+        /* ═══════════════════════════════════════
+           TOKENS DE MARCA — LUMO Travels
+           Manual de Marca v1
+        ═══════════════════════════════════════ */
+        :root {
+            --lumo-green:   #4CAF50;
+            --lumo-yellow:  #FFEB3B;
+            --lumo-dark:    #212121;
+            --lumo-white:   #FFFFFF;
+            --lumo-gray:    #F5F5F5;
+            --lumo-gray2:   #E8E8E8;
+            --lumo-text:    #333333;
+            --lumo-muted:   #777777;
+            --radius-lg:    16px;
+            --radius-md:    10px;
+            --radius-sm:    6px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #F0F4F0; /* verde muy suave de fondo */
+            min-height: 100vh;
+        }
+
+        /* ═══════════════════════════════════════
+           LOADING SCREEN
+        ═══════════════════════════════════════ */
         #loading-screen {
             position: fixed; top:0; left:0; width:100vw; height:100vh;
             background: rgba(255,255,255,0.97);
             z-index: 99999; display:none;
             flex-direction:column; justify-content:center; align-items:center;
+            gap: 16px;
+        }
+        .lumo-spinner {
+            width: 52px; height: 52px;
+            border: 4px solid var(--lumo-gray2);
+            border-top-color: var(--lumo-green);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .spinner {
-            width:56px; height:56px;
-            border:5px solid #E6FF00; border-top-color:transparent;
-            border-radius:50%; animation: spin 0.8s linear infinite;
+        #loading-screen h3 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700; font-size: 18px; color: var(--lumo-dark);
+        }
+        #loading-screen p {
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px; color: var(--lumo-muted);
         }
 
-        /* ── Form inputs ── */
-        .form-input {
-            width:100%; border:2px solid #e5e7eb; border-radius:10px;
-            padding:10px 14px; font-family:'Montserrat',sans-serif; font-size:14px;
-            outline:none; transition:border-color 0.2s; box-sizing:border-box;
+        /* ═══════════════════════════════════════
+           LAYOUT PRINCIPAL
+        ═══════════════════════════════════════ */
+        .app-shell {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 32px 16px 64px;
         }
-        .form-input:focus { border-color:#E6FF00; box-shadow:0 0 0 3px rgba(230,255,0,0.25); }
-        .btn-gen {
-            width:100%; background:#E6FF00; color:#2D2D2D; font-weight:900;
-            font-size:18px; padding:14px; border-radius:12px; border:none;
-            cursor:pointer; font-family:'Montserrat',sans-serif; transition:all 0.2s;
-        }
-        .btn-gen:hover { background:#d4ec00; transform:translateY(-1px); box-shadow:0 6px 20px rgba(230,255,0,0.4); }
 
-        /* ══════════════════════════════════════════════
-           PDF WRAPPER
-           • position:fixed + left:-9999px = fuera de
-             pantalla pero con dimensiones computadas.
-           • NUNCA display:none → html2canvas no puede
-             medir elementos ocultos.
-        ══════════════════════════════════════════════ */
+        /* ── Cabecera de la app ── */
+        .app-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .app-header .logo-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .app-header h1 {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--lumo-green);
+            letter-spacing: -0.5px;
+        }
+        .app-header p {
+            font-size: 13px;
+            color: var(--lumo-muted);
+            font-weight: 400;
+        }
+
+        /* ── Card del formulario ── */
+        .form-card {
+            background: var(--lumo-white);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: 0 4px 24px rgba(76,175,80,0.10), 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        /* ── Secciones del form ── */
+        .form-section {
+            margin-bottom: 28px;
+        }
+        .form-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--lumo-green);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #E8F5E9;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--lumo-dark);
+        }
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            border: 1.5px solid var(--lumo-gray2);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            color: var(--lumo-dark);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #FAFAFA;
+            resize: vertical;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: var(--lumo-green);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(76,175,80,0.12);
+        }
+        .form-group input::placeholder,
+        .form-group textarea::placeholder { color: #BDBDBD; }
+
+        /* file input */
+        .file-input-wrap {
+            border: 1.5px dashed var(--lumo-gray2);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            background: #FAFAFA;
+            transition: border-color 0.2s;
+            cursor: pointer;
+        }
+        .file-input-wrap:hover { border-color: var(--lumo-green); }
+        .file-input-wrap input[type="file"] {
+            border: none; padding: 0; background: transparent;
+            font-size: 13px; cursor: pointer;
+            box-shadow: none !important;
+        }
+        .file-label-sub { font-size: 11px; color: var(--lumo-muted); margin-top: 3px; }
+
+        /* ── Botón principal ── */
+        .btn-primary {
+            width: 100%;
+            background: var(--lumo-green);
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            padding: 15px 24px;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            letter-spacing: 0.3px;
+            margin-top: 8px;
+        }
+        .btn-primary:hover {
+            background: #43A047;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(76,175,80,0.35);
+        }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary svg { flex-shrink: 0; }
+
+        /* ── Tip de WhatsApp ── */
+        .wa-tip {
+            margin-top: 12px;
+            background: #E8F5E9;
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 12px;
+            color: #388E3C;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ═══════════════════════════════════════
+           ISOTIPO SVG — se usa en formulario y PDF
+        ═══════════════════════════════════════ */
+        /* (inline SVG en HTML) */
+
+        /* ═══════════════════════════════════════
+           PDF WRAPPER — off-screen
+           fixed + left:-9999px → dimensiones reales,
+           invisible para el usuario.
+           NUNCA display:none
+        ═══════════════════════════════════════ */
         #pdf-wrapper {
             position: fixed;
             top: 0;
@@ -60,357 +231,443 @@
             z-index: -1;
         }
 
-        /* ══════════════════════════════════════════════
+        /* ═══════════════════════════════════════
            ESTILOS DEL PDF
-           Reglas críticas para html2canvas:
-           1. display:block en vez de flex/grid
-           2. Sin emojis en texto — html2canvas los
-              renderiza de forma inconsistente
-           3. Todos los anchos explícitos en px
-           4. box-sizing: border-box en todo
-           5. float para layouts de 2 columnas
-        ══════════════════════════════════════════════ */
+           — Arial/Helvetica: máxima compatibilidad
+             con html2canvas
+           — display:block en todo (sin flex/grid)
+           — anchos explícitos en px
+           — sin emojis en texto renderizado
+        ═══════════════════════════════════════ */
         #pdf-template * { box-sizing: border-box; }
-
         #pdf-template {
             width: 794px;
             font-family: Arial, Helvetica, sans-serif;
-            color: #2D2D2D;
             background: white;
             margin: 0; padding: 0;
             display: block;
         }
 
-        /* HEADER */
-        .t-header {
-            background-color: #E6FF00;
-            padding: 24px 40px 22px 40px;
+        /* PDF HEADER — verde LUMO */
+        .pdf-header {
+            background-color: #4CAF50;
+            padding: 22px 40px;
             display: block;
             width: 794px;
+            overflow: hidden;
         }
-        .t-header-title {
-            font-size: 34px;
+        .pdf-header-inner {
+            display: block;
+            overflow: hidden; /* clearfix */
+        }
+        .pdf-header-inner::after { content:''; display:table; clear:both; }
+        .pdf-logo-block { float: left; }
+        .pdf-logo-name {
+            font-size: 30px;
             font-weight: 900;
-            color: #2D2D2D;
-            margin: 0 0 5px 0;
-            line-height: 1.1;
+            color: #FFFFFF;
+            margin: 0 0 2px 0;
+            line-height: 1;
             font-family: Arial, Helvetica, sans-serif;
             display: block;
         }
-        .t-header-sub {
-            font-size: 13px;
-            color: #555;
-            font-weight: 700;
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            display: block;
-        }
-
-        /* BANNER LEGAL */
-        .t-legal-banner {
-            background-color: #2D2D2D;
-            padding: 9px 40px;
-            text-align: center;
-            width: 794px;
-            display: block;
-        }
-        .t-legal-banner p {
-            margin: 0;
+        .pdf-logo-tagline {
             font-size: 11px;
-            font-weight: 700;
-            color: #E6FF00;
-            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.85);
+            font-weight: 400;
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            display: block;
+            letter-spacing: 0.5px;
+        }
+        .pdf-rnt-block {
+            float: right;
+            text-align: right;
+            padding-top: 4px;
+        }
+        .pdf-rnt-label {
+            font-size: 9px;
+            color: rgba(255,255,255,0.7);
+            display: block;
+            letter-spacing: 1px;
+            text-transform: uppercase;
             font-family: Arial, Helvetica, sans-serif;
         }
+        .pdf-rnt-value {
+            font-size: 14px;
+            font-weight: 900;
+            color: #FFEB3B;
+            display: block;
+            font-family: Arial, Helvetica, sans-serif;
+            letter-spacing: 1px;
+        }
 
-        /* FOTOS: ancho fijo 794px */
-        .t-img-box {
+        /* BARRA AMARILLA bajo el header */
+        .pdf-accent-bar {
+            background-color: #FFEB3B;
+            height: 5px;
             width: 794px;
-            height: 280px;
-            background: #e0e0e0;
+            display: block;
+        }
+
+        /* FOTOS */
+        .pdf-img-box {
+            width: 794px;
+            height: 270px;
+            background: #E0E0E0;
             overflow: hidden;
             display: block;
             line-height: 0;
             position: relative;
         }
-        .t-img-box img {
+        .pdf-img-box img {
             width: 794px;
-            height: 280px;
+            height: 270px;
             object-fit: cover;
             display: block;
             position: absolute;
             top: 0; left: 0;
         }
-        .t-img-placeholder {
-            width: 794px;
-            height: 280px;
-            background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+        .pdf-img-ph {
+            width: 794px; height: 270px;
+            background: #EEEEEE;
             display: table;
-            position: absolute;
-            top: 0; left: 0;
+            position: absolute; top:0; left:0;
         }
-        .t-img-placeholder span {
+        .pdf-img-ph span {
             display: table-cell;
-            vertical-align: middle;
-            text-align: center;
-            color: #aaa;
-            font-size: 14px;
+            vertical-align: middle; text-align: center;
+            color: #BDBDBD; font-size: 13px;
             font-family: Arial, Helvetica, sans-serif;
         }
-
-        /* CONTENIDO */
-        .t-content {
-            padding: 28px 44px;
-            background: white;
-            display: block;
-            width: 794px;
-        }
-        .t-destination {
-            font-size: 26px;
-            font-weight: 900;
-            color: #2D2D2D;
-            margin: 0 0 6px 0;
-            font-family: Arial, Helvetica, sans-serif;
-            display: block;
-        }
-        .t-dates {
-            font-size: 14px;
-            color: #555;
+        /* Etiqueta superpuesta sobre la foto */
+        .pdf-img-badge {
+            position: absolute;
+            bottom: 16px; left: 40px;
+            background: #FFEB3B;
+            color: #212121;
+            font-size: 11px;
             font-weight: 700;
-            margin: 0 0 22px 0;
+            padding: 5px 14px;
+            border-radius: 20px;
             font-family: Arial, Helvetica, sans-serif;
-            display: block;
+            letter-spacing: 0.5px;
+            z-index: 2;
         }
 
-        /* INCLUSIONES */
-        .t-inc-box {
-            background: #fafafa;
-            padding: 22px;
-            border-radius: 8px;
-            border: 1.5px dashed #e0e0e0;
-            display: block;
+        /* SECCIÓN PRINCIPAL */
+        .pdf-section { padding: 28px 44px; display: block; width: 794px; background: white; }
+
+        .pdf-dest-name {
+            font-size: 28px; font-weight: 900;
+            color: #212121; margin: 0 0 4px 0;
+            font-family: Arial, Helvetica, sans-serif; display: block;
+            line-height: 1.1;
         }
-        .t-inc-title {
-            font-size: 15px;
-            font-weight: 900;
-            color: #2D2D2D;
-            margin: 0 0 14px 0;
+        .pdf-dest-dates {
+            font-size: 13px; color: #4CAF50; font-weight: 700;
+            margin: 0 0 24px 0; display: block;
             font-family: Arial, Helvetica, sans-serif;
+            letter-spacing: 0.3px;
+        }
+
+        /* BOX INCLUSIONES */
+        .pdf-inc-box {
+            background: #F9FBE7;
+            border: 1.5px solid #E8F5E9;
+            border-radius: 10px;
+            padding: 22px 24px;
             display: block;
         }
-        .t-inc-item {
+        .pdf-inc-title {
+            font-size: 13px; font-weight: 900;
+            color: #2E7D32; margin: 0 0 14px 0;
+            font-family: Arial, Helvetica, sans-serif; display: block;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .pdf-inc-item {
             display: block;
-            background: white;
-            border-left: 4px solid #E6FF00;
-            padding: 9px 14px;
-            margin-bottom: 8px;
+            padding: 9px 14px 9px 16px;
+            margin-bottom: 7px;
             border-radius: 0 6px 6px 0;
-            font-size: 13px;
-            font-weight: 700;
+            font-size: 13px; font-weight: 700;
             color: #333;
             font-family: Arial, Helvetica, sans-serif;
             line-height: 1.4;
-            width: 100%;
+            background: white;
+            border-left: 4px solid #4CAF50;
         }
+        .pdf-inc-item:last-child { margin-bottom: 0; }
 
-        /* PRECIO */
-        .t-price-box {
-            background: #E6FF00;
-            padding: 26px 22px;
-            text-align: center;
+        /* PRECIO — caja amarilla */
+        .pdf-price-section { padding: 0 44px 28px 44px; display: block; width: 794px; }
+        .pdf-price-box {
+            background: #FFEB3B;
             border-radius: 12px;
-            margin-bottom: 22px;
+            padding: 28px 24px;
+            text-align: center;
             display: block;
         }
-        .t-price-label {
-            margin: 0 0 8px 0;
-            font-size: 12px;
-            color: #444;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-family: Arial, Helvetica, sans-serif;
-            display: block;
+        .pdf-price-label {
+            font-size: 10px; font-weight: 700;
+            color: #555; margin: 0 0 8px 0;
+            letter-spacing: 2px; text-transform: uppercase;
+            font-family: Arial, Helvetica, sans-serif; display: block;
         }
-        .t-price-value {
-            margin: 0;
-            font-size: 36px;
-            font-weight: 900;
-            color: #000;
+        .pdf-price-value {
+            font-size: 38px; font-weight: 900;
+            color: #212121; margin: 0;
+            font-family: Arial, Helvetica, sans-serif; display: block;
+            line-height: 1;
+        }
+        .pdf-price-sub {
+            font-size: 11px; color: #555;
+            margin: 6px 0 0 0; display: block;
             font-family: Arial, Helvetica, sans-serif;
-            line-height: 1.1;
-            display: block;
         }
 
         /* LEGALES */
-        .t-legal-box {
-            background: #f8f9fa;
-            padding: 18px 20px;
-            border-left: 4px solid #bbb;
-            border-radius: 0 8px 8px 0;
-            margin-bottom: 22px;
+        .pdf-legal-section { padding: 0 44px 28px 44px; display: block; width: 794px; }
+        .pdf-legal-box {
+            background: #FAFAFA;
+            border: 1px solid #E0E0E0;
+            border-top: 3px solid #FFEB3B;
+            border-radius: 0 0 8px 8px;
+            padding: 16px 20px;
             display: block;
         }
-        .t-legal-title {
-            font-size: 13px;
-            font-weight: 900;
-            margin: 0 0 7px 0;
-            color: #2D2D2D;
-            font-family: Arial, Helvetica, sans-serif;
-            display: block;
+        .pdf-legal-title {
+            font-size: 11px; font-weight: 900;
+            color: #212121; margin: 0 0 6px 0;
+            font-family: Arial, Helvetica, sans-serif; display: block;
+            text-transform: uppercase; letter-spacing: 0.8px;
         }
-        .t-legal-text {
-            font-size: 11px;
-            color: #555;
-            line-height: 1.6;
-            margin: 0;
+        .pdf-legal-text {
+            font-size: 10px; color: #666;
+            line-height: 1.6; margin: 0;
             text-align: justify;
-            font-family: Arial, Helvetica, sans-serif;
-            display: block;
+            font-family: Arial, Helvetica, sans-serif; display: block;
         }
 
-        /* FOOTER — float en vez de flex */
-        .t-footer {
-            padding: 14px 44px 18px 44px;
-            border-top: 3px solid #E6FF00;
-            background: white;
-            width: 794px;
-            display: block;
+        /* FOOTER */
+        .pdf-footer {
+            background: #212121;
+            padding: 14px 44px;
+            width: 794px; display: block;
             overflow: hidden;
         }
-        .t-footer::after { content:''; display:table; clear:both; }
-        .t-footer-left {
+        .pdf-footer::after { content:''; display:table; clear:both; }
+        .pdf-footer-left {
             float: left;
-            font-size: 11px;
-            color: #999;
-            font-weight: 700;
+            font-size: 12px; font-weight: 700;
+            color: #FFEB3B;
             font-family: Arial, Helvetica, sans-serif;
         }
-        .t-footer-right {
+        .pdf-footer-right {
             float: right;
-            font-size: 11px;
-            color: #999;
+            font-size: 11px; color: #757575;
             font-family: Arial, Helvetica, sans-serif;
+        }
+        .pdf-footer-dot {
+            display: inline-block;
+            width: 5px; height: 5px;
+            background: #4CAF50;
+            border-radius: 50%;
+            margin: 0 8px;
+            vertical-align: middle;
         }
     </style>
 </head>
 <body>
 
-<!-- Loading -->
+<!-- ═══════════════ LOADING ═══════════════ -->
 <div id="loading-screen">
-    <div class="spinner"></div>
-    <p style="font-family:'Montserrat',sans-serif;font-size:20px;font-weight:900;margin-top:20px;color:#2D2D2D;">Armando tu propuesta...</p>
-    <p style="font-family:'Montserrat',sans-serif;color:#888;margin-top:6px;font-size:14px;">Esto toma solo un momento</p>
+    <div class="lumo-spinner"></div>
+    <h3>Generando propuesta...</h3>
+    <p>Esto toma solo unos segundos</p>
 </div>
 
-<!-- Formulario -->
-<div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-8 my-8">
-    <div class="text-center mb-8">
-        <div style="font-size:42px;margin-bottom:8px;">🍋</div>
-        <h1 style="font-family:'Montserrat',sans-serif;font-size:28px;font-weight:900;color:#2D2D2D;margin:0;">LUMO Travels</h1>
-        <p style="color:#999;font-size:14px;margin-top:6px;font-family:'Montserrat',sans-serif;">Generador de Propuestas Comerciales</p>
+<!-- ═══════════════ APP ═══════════════ -->
+<div class="app-shell">
+
+    <!-- Cabecera -->
+    <div class="app-header">
+        <div class="logo-wrap">
+            <!-- Isotipo LUMO (SVG inline) -->
+            <svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="21" cy="21" r="21" fill="#FFEB3B"/>
+                <!-- Mitad izquierda: limón sólido -->
+                <path d="M21 2 C10.5 2 2 10.5 2 21 L21 21 Z" fill="#4CAF50"/>
+                <path d="M2 21 C2 31.5 10.5 40 21 40 L21 21 Z" fill="#4CAF50"/>
+                <!-- Mitad derecha: rodaja con rayos -->
+                <circle cx="21" cy="21" r="10" fill="white" opacity="0.3"/>
+                <line x1="21" y1="11" x2="21" y2="6"  stroke="#E65100" stroke-width="2" stroke-linecap="round"/>
+                <line x1="28.5" y1="13.5" x2="32" y2="10"  stroke="#E65100" stroke-width="2" stroke-linecap="round"/>
+                <line x1="31" y1="21" x2="36" y2="21"  stroke="#E65100" stroke-width="2" stroke-linecap="round"/>
+                <line x1="28.5" y1="28.5" x2="32" y2="32"  stroke="#E65100" stroke-width="2" stroke-linecap="round"/>
+                <line x1="21" y1="31" x2="21" y2="36"  stroke="#E65100" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <h1>LUMO Travels</h1>
+        </div>
+        <p>Generador de Propuestas Comerciales</p>
     </div>
 
-    <div class="space-y-5">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Hotel / Destino</label>
-                <input type="text" id="hotel" class="form-input" placeholder="Ej: San Andres, Hotel Isla Bonita">
+    <!-- Card Formulario -->
+    <div class="form-card">
+
+        <!-- SECCIÓN 1: Destino -->
+        <div class="form-section">
+            <div class="form-section-title">Informacion del Viaje</div>
+            <div class="form-row" style="margin-bottom:14px;">
+                <div class="form-group">
+                    <label>Hotel / Destino</label>
+                    <input type="text" id="hotel" placeholder="Ej: San Andres, Hotel Isla Bonita">
+                </div>
+                <div class="form-group">
+                    <label>Fechas de Viaje</label>
+                    <input type="text" id="fechas" placeholder="Ej: 10 al 13 de junio 2026">
+                </div>
             </div>
-            <div>
-                <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Fechas de Viaje</label>
-                <input type="text" id="fechas" class="form-input" placeholder="Ej: 10 al 13 de junio de 2026">
-            </div>
-        </div>
-
-        <div>
-            <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Precio Total INVERSION</label>
-            <input type="text" id="precio" class="form-input" placeholder="Ej: $2.220.000 por pareja">
-        </div>
-
-        <div>
-            <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Inclusiones <span style="font-weight:400;color:#999">(un item por linea)</span></label>
-            <textarea id="inclusiones" rows="5" class="form-input" style="resize:vertical;" placeholder="Vuelos ida y vuelta desde Medellin&#10;Traslados PRIVADOS&#10;Seguro medico&#10;2 noches en hotel seleccionado"></textarea>
-        </div>
-
-        <div>
-            <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Terminos Legales</label>
-            <textarea id="legales" rows="3" class="form-input" style="resize:vertical;" placeholder="Tarifa sujeta a disponibilidad..."></textarea>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Foto Principal</label>
-                <input type="file" id="foto1" accept="image/*" style="width:100%;font-size:13px;">
-            </div>
-            <div>
-                <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Foto Secundaria</label>
-                <input type="file" id="foto2" accept="image/*" style="width:100%;font-size:13px;">
+            <div class="form-group">
+                <label>Precio Total — Inversion</label>
+                <input type="text" id="precio" placeholder="Ej: $2.220.000 por pareja">
             </div>
         </div>
 
-        <button class="btn-gen" onclick="generarTodo()">🚀 Generar PDF</button>
+        <!-- SECCIÓN 2: Inclusiones -->
+        <div class="form-section">
+            <div class="form-section-title">Que incluye el paquete</div>
+            <div class="form-group">
+                <textarea id="inclusiones" rows="6" placeholder="Vuelos ida y vuelta desde Medellin&#10;Traslados PRIVADOS aeropuerto&#10;Seguro medico de viaje&#10;2 noches en habitacion doble&#10;Desayunos incluidos"></textarea>
+                <span style="font-size:11px;color:#BDBDBD;margin-top:4px;">Un item por linea</span>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: Legales -->
+        <div class="form-section">
+            <div class="form-section-title">Terminos Legales</div>
+            <div class="form-group">
+                <textarea id="legales" rows="3" placeholder="Tarifa sujeta a disponibilidad al reservar. No incluye tarjeta de entrada a la isla..."></textarea>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 4: Fotos -->
+        <div class="form-section" style="margin-bottom:24px;">
+            <div class="form-section-title">Imagenes del Destino</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Foto Principal</label>
+                    <div class="file-input-wrap">
+                        <input type="file" id="foto1" accept="image/*">
+                        <div class="file-label-sub">Vista panoramica del hotel</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Foto Secundaria</label>
+                    <div class="file-input-wrap">
+                        <input type="file" id="foto2" accept="image/*">
+                        <div class="file-label-sub">Amenidades o atraccion</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <button class="btn-primary" onclick="generarTodo()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Generar y Descargar PDF
+        </button>
+
+        <div class="wa-tip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#388E3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.99 1.18 2 2 0 012.98 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+            El mensaje para WhatsApp se copiara automaticamente al portapapeles
+        </div>
+
     </div>
-</div>
+</div><!-- .app-shell -->
 
-<!-- ═══════════════════════════════
-     PLANTILLA PDF (off-screen)
-═══════════════════════════════ -->
+
+<!-- ═══════════════════════════════════════
+     PLANTILLA PDF — off-screen
+     position:fixed + left:-9999px
+     NUNCA display:none
+═══════════════════════════════════════ -->
 <div id="pdf-wrapper">
 <div id="pdf-template">
 
-    <div class="t-header">
-        <p class="t-header-title">LUMO Travels</p>
-        <p class="t-header-sub">Tu proximo destino comienza aqui</p>
+    <!-- HEADER VERDE -->
+    <div class="pdf-header">
+        <div class="pdf-header-inner">
+            <div class="pdf-logo-block">
+                <p class="pdf-logo-name">LUMO Travels</p>
+                <p class="pdf-logo-tagline">Iluminando tus Aventuras</p>
+            </div>
+            <div class="pdf-rnt-block">
+                <span class="pdf-rnt-label">Agencia Registrada</span>
+                <span class="pdf-rnt-value">RNT 278559</span>
+            </div>
+        </div>
     </div>
+    <!-- Barra amarilla -->
+    <div class="pdf-accent-bar"></div>
 
-    <div class="t-legal-banner">
-        <p>AGENCIA LEGALMENTE CONSTITUIDA | RNT: 278559</p>
-    </div>
-
-    <!-- Foto 1 -->
-    <div class="t-img-box" id="img-box-1">
-        <div class="t-img-placeholder" id="ph1"><span>Sin imagen principal</span></div>
+    <!-- FOTO PRINCIPAL -->
+    <div class="pdf-img-box" id="img-box-1">
+        <div class="pdf-img-ph" id="ph1"><span>Foto principal del destino</span></div>
         <img id="pdf-img1" src="" style="display:none;">
+        <div class="pdf-img-badge" id="badge-destino">Destino</div>
     </div>
 
-    <!-- Destino + Fechas + Inclusiones -->
-    <div class="t-content">
-        <p class="t-destination" id="pdf-hotel"></p>
-        <p class="t-dates" id="pdf-fechas"></p>
-        <div class="t-inc-box">
-            <p class="t-inc-title">Tu paquete incluye:</p>
+    <!-- DESTINO + FECHAS + INCLUSIONES -->
+    <div class="pdf-section">
+        <p class="pdf-dest-name"  id="pdf-hotel"></p>
+        <p class="pdf-dest-dates" id="pdf-fechas"></p>
+        <div class="pdf-inc-box">
+            <p class="pdf-inc-title">Tu paquete incluye:</p>
             <div id="pdf-inclusiones"></div>
         </div>
     </div>
 
-    <!-- Foto 2 -->
-    <div class="t-img-box" id="img-box-2">
-        <div class="t-img-placeholder" id="ph2"><span>Sin imagen secundaria</span></div>
+    <!-- FOTO SECUNDARIA -->
+    <div class="pdf-img-box" id="img-box-2">
+        <div class="pdf-img-ph" id="ph2"><span>Foto secundaria del destino</span></div>
         <img id="pdf-img2" src="" style="display:none;">
+        <div class="pdf-img-badge">Experiencias</div>
     </div>
 
-    <!-- Precio + Legales + Footer -->
-    <div class="t-content">
-        <div class="t-price-box">
-            <p class="t-price-label">INVERSION TOTAL DE TU VIAJE</p>
-            <p class="t-price-value" id="pdf-precio"></p>
-        </div>
-        <div class="t-legal-box">
-            <p class="t-legal-title">Terminos y Condiciones:</p>
-            <p class="t-legal-text" id="pdf-legales"></p>
+    <!-- PRECIO -->
+    <div class="pdf-price-section" style="padding-top:28px;">
+        <div class="pdf-price-box">
+            <p class="pdf-price-label">Inversion total de tu viaje</p>
+            <p class="pdf-price-value" id="pdf-precio"></p>
+            <p class="pdf-price-sub">Precio por paquete completo | Reserva con RNT 278559</p>
         </div>
     </div>
 
-    <div class="t-footer">
-        <span class="t-footer-left">LUMO Travels | RNT 278559</span>
-        <span class="t-footer-right">Propuesta generada con amor</span>
+    <!-- LEGALES -->
+    <div class="pdf-legal-section">
+        <div class="pdf-legal-box">
+            <p class="pdf-legal-title">Terminos y Condiciones</p>
+            <p class="pdf-legal-text" id="pdf-legales"></p>
+        </div>
     </div>
 
-</div>
-</div>
+    <!-- FOOTER NEGRO -->
+    <div class="pdf-footer">
+        <span class="pdf-footer-left">LUMO Travels<span class="pdf-footer-dot"></span>RNT 278559</span>
+        <span class="pdf-footer-right">Propuesta generada con amor por LUMO</span>
+    </div>
+
+</div><!-- #pdf-template -->
+</div><!-- #pdf-wrapper -->
+
 
 <script>
+/* ─────────────────────────────────────────
+   UTILIDADES
+───────────────────────────────────────── */
 function fileToDataURL(file) {
     return new Promise(resolve => {
         const r = new FileReader();
@@ -419,7 +676,6 @@ function fileToDataURL(file) {
         r.readAsDataURL(file);
     });
 }
-
 function waitForImage(img) {
     return new Promise(resolve => {
         if (img.complete && img.naturalHeight > 0) { resolve(); return; }
@@ -428,12 +684,16 @@ function waitForImage(img) {
     });
 }
 
+/* ─────────────────────────────────────────
+   LLENAR TEMPLATE
+───────────────────────────────────────── */
 async function prepararTemplate({ hotel, fechas, precio, inclusiones, legales, foto1, foto2 }) {
-    // Textos (sin emojis — html2canvas los renderiza mal en algunos OS)
+    // Textos (sin emojis — inconsistentes en html2canvas)
     document.getElementById('pdf-hotel').innerText   = hotel;
     document.getElementById('pdf-fechas').innerText  = 'Fechas: ' + fechas;
     document.getElementById('pdf-precio').innerText  = precio;
-    document.getElementById('pdf-legales').innerText = legales || 'Tarifa sujeta a disponibilidad.';
+    document.getElementById('pdf-legales').innerText = legales || 'Tarifa sujeta a disponibilidad al reservar.';
+    document.getElementById('badge-destino').innerText = hotel.split(',')[0].trim();
 
     // Inclusiones
     const container = document.getElementById('pdf-inclusiones');
@@ -442,34 +702,35 @@ async function prepararTemplate({ hotel, fechas, precio, inclusiones, legales, f
         const texto = linea.replace(/✅/g, '').trim();
         if (!texto) return;
         const div = document.createElement('div');
-        div.className = 't-inc-item';
-        div.innerText = '+ ' + texto;
+        div.className = 'pdf-inc-item';
+        div.innerText  = texto;
         container.appendChild(div);
     });
 
-    // Imagenes
+    // Imagenes base64
     const promesas = [];
-
     async function cargarFoto(inputEl, imgId, phId) {
-        if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+        if (!inputEl?.files?.[0]) return;
         const dataURL = await fileToDataURL(inputEl.files[0]);
         if (!dataURL) return;
         const img = document.getElementById(imgId);
         const ph  = document.getElementById(phId);
-        img.src           = dataURL;
+        img.src = dataURL;
         img.style.display = 'block';
         ph.style.display  = 'none';
         promesas.push(waitForImage(img));
     }
-
-    await cargarFoto(document.getElementById('foto1'), 'pdf-img1', 'ph1');
-    await cargarFoto(document.getElementById('foto2'), 'pdf-img2', 'ph2');
+    await cargarFoto(foto1, 'pdf-img1', 'ph1');
+    await cargarFoto(foto2, 'pdf-img2', 'ph2');
     await Promise.all(promesas);
 
-    // Pausa de seguridad para que el navegador termine el layout
+    // Pausa de seguridad
     await new Promise(r => setTimeout(r, 500));
 }
 
+/* ─────────────────────────────────────────
+   GENERAR PDF
+───────────────────────────────────────── */
 async function generarTodo() {
     const hotel       = document.getElementById('hotel').value.trim();
     const fechas      = document.getElementById('fechas').value.trim();
@@ -485,9 +746,11 @@ async function generarTodo() {
     document.getElementById('loading-screen').style.display = 'flex';
 
     try {
-        await prepararTemplate({ hotel, fechas, precio, inclusiones, legales,
+        await prepararTemplate({
+            hotel, fechas, precio, inclusiones, legales,
             foto1: document.getElementById('foto1'),
-            foto2: document.getElementById('foto2') });
+            foto2: document.getElementById('foto2')
+        });
 
         const template = document.getElementById('pdf-template');
 
@@ -497,17 +760,17 @@ async function generarTodo() {
             allowTaint: true,
             backgroundColor: '#ffffff',
             width: 794,
-            windowWidth: 794,    // evita reflows por viewport
+            windowWidth: 794,
             scrollX: 0,
             scrollY: 0,
-            foreignObjectRendering: false,  // más estable en Chrome/Edge
+            foreignObjectRendering: false,
             logging: false
         });
 
         const { jsPDF } = window.jspdf;
         const imgData   = canvas.toDataURL('image/jpeg', 0.95);
         const pdfW      = 794;
-        const pdfH      = Math.round(canvas.height / 2);  // /scale
+        const pdfH      = Math.round(canvas.height / 2);
 
         const pdf = new jsPDF({
             orientation: 'portrait',
@@ -515,17 +778,16 @@ async function generarTodo() {
             format: [pdfW, pdfH],
             compress: true
         });
-
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, '', 'FAST');
         pdf.save(`Propuesta_LUMO_${hotel.replace(/\s+/g, '_')}.pdf`);
 
-        // Mensaje WhatsApp al portapapeles
-        const msgWA = `Hola! Tu propuesta de *LUMO Travels* para ${hotel} esta lista.\n\nFechas: ${fechas}\nInversion: ${precio}\n\nEl PDF adjunto incluye fotos y detalle completo del paquete. Reserva con seguridad: *RNT 278559*.\n\n Si te parece bien, verificamos disponibilidad de vuelos ahora mismo.`;
+        // Mensaje WhatsApp
+        const msgWA = `Hola! Te comparto la propuesta formal de *LUMO Travels* para tu viaje.\n\n Destino: *${hotel}*\n Fechas: ${fechas}\n Inversion: *${precio}*\n\nEn el PDF adjunto encontraras el detalle completo, fotos y todo lo que incluye tu paquete.\n\nReserva con total seguridad: somos una agencia legalmente registrada (*RNT 278559*).\n\n Cuadra tu viaje con LUMO? Si me das el OK verificamos disponibilidad ahora mismo.`;
         try { await navigator.clipboard.writeText(msgWA); } catch(_) {}
 
     } catch (err) {
-        console.error('Error al generar PDF:', err);
-        alert('Ocurrio un error. Revisa la consola e intenta de nuevo.');
+        console.error('Error PDF:', err);
+        alert('Ocurrio un error al generar. Revisa la consola.');
     } finally {
         document.getElementById('loading-screen').style.display = 'none';
     }
