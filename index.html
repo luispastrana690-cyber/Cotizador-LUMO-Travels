@@ -14,15 +14,57 @@
         }
     </script>
     <style>
+        /* ESTILOS PARA LA PÁGINA WEB */
         #pdf-template {
-            width: 450px; 
+            display: none; /* Mantener oculto en la web */
+        }
+        
+        /* ESTILOS ESPECÍFICOS PARA EL PDF (Basado en A4 estándar) */
+        @media print {
+            .avoid-break {
+                page-break-inside: avoid;
+            }
+        }
+        
+        #pdf-container {
+            width: 794px; /* Ancho de un A4 a 96 DPI */
             background: white;
             font-family: 'Arial', sans-serif;
-            display: none; /* Ahora lo ocultamos de forma segura */
-            margin: 0 auto;
+            color: #2D2D2D;
+            margin: 0;
+            padding: 0;
         }
-        .pdf-header { background-color: #E6FF00; padding: 30px 20px; text-align: center; }
-        .pdf-img { width: 100%; height: 250px; object-fit: cover; }
+
+        .pdf-header {
+            background-color: #E6FF00;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        /* SOLUCIÓN ERROR 1 Y 2: Contenedor de imágenes Justificadas */
+        .image-container {
+            width: 100%;
+            height: 400px; /* Alto fijo pero proporcional en A4 */
+            overflow: hidden;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+        .pdf-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Solución: Llena el ancho sin deformarse */
+            display: block;
+        }
+
+        .content-box {
+            padding: 40px 50px; /* Espaciado interno limpio */
+        }
+        
+        /* SOLUCIÓN ERROR 3: Títulos que evitan cortes de página */
+        h2, h3, .price-banner, .legal-banner {
+            page-break-after: avoid;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-4 md:p-8">
@@ -30,87 +72,98 @@
     <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-dark mb-2">🍋 LUMO Travels</h1>
-            <p class="text-gray-500">Generador Automático de Propuestas</p>
+            <p class="text-gray-500">Generador de Propuestas Profesionales (PDF-A4)</p>
         </div>
 
         <form id="lumo-form" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Hotel / Destino</label>
-                    <input type="text" id="hotel" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: Hotel Occidental Caribe" required>
+                    <input type="text" id="hotel" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: Hotel Occidental Caribe">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Fechas de Viaje</label>
-                    <input type="text" id="fechas" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: 10 al 13 de Junio 2026" required>
+                    <input type="text" id="fechas" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: 10 al 13 de Junio 2026">
                 </div>
             </div>
 
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">Precio Total</label>
-                <input type="text" id="precio" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: $2.220.000 (Valor por pareja)" required>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Precio Total INVERSIÓN</label>
+                <input type="text" id="precio" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: $2.220.000 (Valor total pareja)">
             </div>
 
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">¿Qué incluye? (Un ítem por línea)</label>
-                <textarea id="inclusiones" rows="4" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Vuelos desde Medellín&#10;Traslados privados&#10;Desayunos" required></textarea>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Inclusiones (Un ítem por línea. Usa ✅ para que salga pro)</label>
+                <textarea id="inclusiones" rows="5" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="✅ Vuelos ida y vuelta desde Medellín.&#10;✅ Traslados privados."></textarea>
             </div>
 
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">Textos Legales / Notas</label>
-                <textarea id="legales" rows="2" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none text-sm" placeholder="Tarifa sujeta a disponibilidad..."></textarea>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Textos Legales / Condiciones</label>
+                <textarea id="legales" rows="3" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none text-sm" placeholder="Tarifa sujeta a disponibilidad..."></textarea>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Foto Principal (Fachada/Piscina)</label>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Foto 1 (Principal - Fachada/Piscina)</label>
                     <input type="file" id="foto1" accept="image/*" class="w-full text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Foto Secundaria (Habitación/Playa)</label>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Foto 2 (Secundaria - Habitación)</label>
                     <input type="file" id="foto2" accept="image/*" class="w-full text-sm">
                 </div>
             </div>
 
             <button type="button" onclick="generarTodo()" class="w-full bg-lumo text-dark font-bold text-lg py-3 rounded-lg shadow-md hover:bg-yellow-400 transition">
-                🚀 Generar PDF y Copiar Mensaje
+                🚀 Generar PDF A4 y Copiar Mensaje
             </button>
         </form>
     </div>
 
     <div id="pdf-template">
-        <div class="pdf-header">
-            <h1 style="font-size: 28px; font-weight: bold; margin: 0; color: #2D2D2D;">LUMO Travels</h1>
-            <p style="margin: 5px 0 0 0; font-size: 14px; color: #555;">Tu próximo destino comienza aquí 🍋☀️</p>
-        </div>
-        
-        <div style="text-align: center; padding: 10px; background: #f3f4f6; border-bottom: 2px solid #E6FF00;">
-            <p style="margin: 0; font-size: 11px; font-weight: bold; color: #333;">AGENCIA LEGALMENTE CONSTITUIDA | RNT: 278559</p>
-            <p style="margin: 2px 0 0 0; font-size: 9px; color: #666;">Consulta nuestra legalidad en el portal oficial de Fontur.</p>
-        </div>
-
-        <img id="pdf-img1" class="pdf-img" src="" style="display: none;">
-
-        <div style="padding: 25px;">
-            <h2 id="pdf-hotel" style="font-size: 24px; color: #2D2D2D; margin: 0 0 5px 0;">Destino</h2>
-            <p id="pdf-fechas" style="font-size: 14px; color: #666; font-weight: bold; margin: 0 0 20px 0;">Fechas</p>
-
-            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="font-size: 16px; margin: 0 0 10px 0; color: #2D2D2D;">✅ Tu paquete incluye:</h3>
-                <ul id="pdf-inclusiones" style="margin: 0; padding-left: 20px; font-size: 13px; color: #444; line-height: 1.6;">
-                </ul>
-            </div>
-        </div>
-
-        <img id="pdf-img2" class="pdf-img" src="" style="display: none;">
-
-        <div style="padding: 25px;">
-            <div style="background: #E6FF00; padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 20px;">
-                <p style="margin: 0; font-size: 14px; color: #333;">VALOR TOTAL INVERSIÓN</p>
-                <p id="pdf-precio" style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #000;"></p>
-            </div>
+        <div id="pdf-container">
             
-            <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">⚠️ Condiciones:</p>
-            <p id="pdf-legales" style="font-size: 10px; color: #666; line-height: 1.4; margin: 0;"></p>
+            <div class="avoid-break" style="margin-bottom: -1px;">
+                <div class="pdf-header">
+                    <h1 style="font-size: 36px; font-weight: bold; margin: 0; color: #2D2D2D;">LUMO Travels</h1>
+                    <p style="margin: 8px 0 0 0; font-size: 16px; color: #555;">Tu próximo destino comienza aquí 🍋☀️</p>
+                </div>
+                
+                <div class="legal-banner" style="text-align: center; padding: 12px 30px; background: #f3f4f6; border-bottom: 3px solid #E6FF00;">
+                    <p style="margin: 0; font-size: 13px; font-weight: bold; color: #333;">AGENCIA LEGALMENTE CONSTITUIDA | RNT: 278559</p>
+                </div>
+
+                <div class="image-container">
+                    <img id="pdf-img1" class="pdf-img" src="" style="display: none;">
+                </div>
+            </div>
+
+            <div class="avoid-break content-box" style="margin-top: -1px; margin-bottom: -1px;">
+                <h2 id="pdf-hotel" style="font-size: 32px; color: #2D2D2D; margin: 0 0 10px 0; font-weight: bold;">Nombre del Hotel</h2>
+                <p id="pdf-fechas" style="font-size: 18px; color: #555; font-weight: bold; margin: 0 0 35px 0;">📅 Fechas de viaje</p>
+
+                <div style="background: #f9fafb; padding: 25px; border-radius: 12px; border: 1px solid #e5e7eb;">
+                    <h3 style="font-size: 20px; margin: 0 0 15px 0; color: #2D2D2D; font-weight: bold;">Tu paquete incluye:</h3>
+                    <ul id="pdf-inclusiones" style="margin: 0; padding-left: 0; font-size: 16px; color: #444; line-height: 1.8; list-style: none;">
+                    </ul>
+                </div>
+            </div>
+
+            <div class="avoid-break" style="margin-top: -1px;">
+                <div class="image-container">
+                    <img id="pdf-img2" class="pdf-img" src="" style="display: none;">
+                </div>
+
+                <div class="content-box">
+                    <div class="price-banner" style="background: #E6FF00; padding: 25px; text-align: center; border-radius: 12px; margin-bottom: 25px;">
+                        <p style="margin: 0; font-size: 16px; color: #333; letter-spacing: 1px;">INVERSIÓN TOTAL DE TU VIAJE</p>
+                        <p id="pdf-precio" style="margin: 8px 0 0 0; font-size: 36px; font-weight: bold; color: #000; letter-spacing: -1px;"></p>
+                    </div>
+                    
+                    <h4 style="font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #2D2D2D;">⚠️ Términos y Condiciones:</h4>
+                    <p id="pdf-legales" style="font-size: 12px; color: #666; line-height: 1.6; margin: 0;"></p>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -163,26 +216,29 @@
             await cargarImagen(document.getElementById('foto1'), 'pdf-img1');
             await cargarImagen(document.getElementById('foto2'), 'pdf-img2');
 
-            // --- LA MAGIA ESTÁ AQUÍ ---
+            // --- LÓGICA DEL PDF OPTIMIZADA ---
             const elementoPDF = document.getElementById('pdf-template');
-            elementoPDF.style.display = 'block'; // Lo mostramos para la foto
+            elementoPDF.style.display = 'block'; // Mostrar microsegundo
 
             const opcionesPDF = {
                 margin: 0,
-                filename: `Propuesta_LUMO_${hotel.replace(/\s+/g, '_')}.pdf`,
+                filename: `LUMO_Propuesta_${hotel.replace(/\s+/g, '_')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'px', format: [450, 900], orientation: 'portrait' }
+                html2canvas: { scale: 3, useCORS: true, letterRendering: true, logging: false },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, // SOLUCIÓN 4: Formato A4 Estándar Universal
+                pagebreak: { mode: ['avoid-all', 'css'] } // SOLUCIÓN 3: Modo inteligente para evitar cortes
             };
 
+            // SOLUCIÓN 1: Limpieza de espacios muertos entre secciones
+            elementoPDF.style.lineHeight = "0"; 
+
             html2pdf().set(opcionesPDF).from(elementoPDF).save().then(() => {
-                elementoPDF.style.display = 'none'; // Lo volvemos a ocultar
+                elementoPDF.style.display = 'none'; // Ocultar
                 
-                const textoWhatsApp = `¡Hola! 🏝️ Aquí tienes la propuesta formal de *LUMO Travels* para tu viaje. 🍋☀️\n\n📌 *DESTINO:* ${hotel}\n📅 *FECHAS:* ${fechas}\n💰 *INVERSIÓN:* ${precio}\n\nEn el PDF adjunto verás las fotos y el detalle de lo que te incluimos. También incluimos nuestra información legal (*RNT 278559*) para que reserves con total seguridad. 🛡️✅\n\n*¿Qué te parece la propuesta? Si me das el OK, procedemos a verificar disponibilidad de vuelos ahora mismo.* ✈️`;
-                
-                navigator.clipboard.writeText(textoWhatsApp).then(() => {
-                    alert("✅ ¡Éxito socio! El PDF se descargó con diseño y el texto ya se copió.");
-                });
+                // Copiar mensaje
+                const textoWhatsApp = `¡Hola! 🏝️ Aquí tienes la propuesta formal de *LUMO Travels* para tu viaje. 🍋☀️\n\n📌 *DESTINO:* ${hotel}\n📅 *FECHAS:* ${fechas}\n💰 *INVERSIÓN:* ${precio}\n\nEn el PDF adjunto verás las fotos y el detalle profesional de lo que te incluimos. También incluimos nuestra información legal (*RNT 278559*) para que reserves con total seguridad. 🛡️✅\n\n*¿Qué te parece la propuesta? Si me das el OK, procedemos a verificar disponibilidad de vuelos ahora mismo.* ✈️`;
+                navigator.clipboard.writeText(textoWhatsApp);
+                alert("✅ ¡Coronamos socio! El PDF en formato A4 se está descargando y el mensaje para WhatsApp ya se copió.");
             });
         }
     </script>
