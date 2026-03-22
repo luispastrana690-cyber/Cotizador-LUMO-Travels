@@ -455,7 +455,7 @@
             </div>
         </div>
 
-        <button class="btn-gen" onclick="generarTodo()">
+        <button class="btn-gen" id="btn-generar">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2.5"
                  stroke-linecap="round" stroke-linejoin="round">
@@ -661,7 +661,7 @@ async function prepararTemplate({ hotel, fechas, precio, inclusiones, legales, f
 /* ────────────────────────────────────
    GENERAR PDF
 ──────────────────────────────────── */
-window.generarTodo = async function generarTodo() {
+async function generarTodo() {
     const hotel       = document.getElementById("hotel").value.trim();
     const fechas      = document.getElementById("fechas").value.trim();
     const precio      = document.getElementById("precio").value.trim();
@@ -716,4 +716,24 @@ window.generarTodo = async function generarTodo() {
         const msgWA = "Hola! Te comparto la propuesta formal de *LUMO Travels* para tu viaje.\n\n Destino: *" + hotel + "*\n Fechas: " + fechas + "\n Inversion: *" + precio + "*\n\nEn el PDF adjunto encuentras el detalle completo y fotos.\nSomos una agencia legalmente registrada (*RNT 278559*).\n\n Te parece bien? Si me das el OK verificamos disponibilidad ahora mismo.";
         try { await navigator.clipboard.writeText(msgWA); } catch(_) {}
 
+    } catch(err) {
+        console.error("Error al generar PDF:", err);
+        alert("Ocurrio un error al generar el PDF. Intenta de nuevo.");
+    } finally {
+        document.getElementById("loading-screen").style.display = "none";
     }
+} // fin generarTodo
+
+// Asignar listener DESPUÉS de que el DOM cargue — inmune a inyecciones externas
+document.addEventListener("DOMContentLoaded", function() {
+    var btn = document.getElementById("btn-generar");
+    if (btn) {
+        btn.addEventListener("click", generarTodo);
+        console.log("LUMO: botón listo");
+    } else {
+        console.error("LUMO: botón no encontrado");
+    }
+});
+</script>
+</body>
+</html>
