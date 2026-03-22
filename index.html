@@ -164,7 +164,7 @@
 
         /* HEADER */
         .ph {
-            background: #212121;
+            background: #FFEB3B;
             padding: 22px 40px 20px 40px;
             display: block; width: 794px;
             overflow: hidden;
@@ -178,18 +178,18 @@
         }
         .ph-rnt { float: right; text-align: right; padding-top: 4px; }
         .ph-rnt-l {
-            display: block; font-size: 9px; color: rgba(255,255,255,0.55);
+            display: block; font-size: 9px; color: rgba(33,33,33,0.6);
             letter-spacing: 1.5px; text-transform: uppercase;
             font-family: Arial, Helvetica, sans-serif;
         }
         .ph-rnt-v {
             display: block; font-size: 16px; font-weight: 900;
-            color: #FFEB3B; font-family: Arial, Helvetica, sans-serif;
+            color: #212121; font-family: Arial, Helvetica, sans-serif;
             letter-spacing: 1.5px;
         }
 
-        /* BARRA AMARILLA — contrasta fuerte con el oscuro */
-        .ph-bar { background: #FFEB3B; height: 6px; width: 794px; display: block; }
+        /* BARRA VERDE — separa el header amarillo de la foto */
+        .ph-bar { background: #4CAF50; height: 6px; width: 794px; display: block; }
 
         /* ─── FIX PRINCIPAL: imágenes sin deformación ───
            Contenedor con height fija y overflow:hidden.
@@ -319,13 +319,53 @@
         }
 
         /* FOOTER */
+        /* ── FOOTER PDF — 2 filas ── */
         .pdf-footer {
-            background: #212121; padding: 13px 44px;
-            width: 794px; display: block; overflow: hidden;
+            background: #212121;
+            width: 794px; display: block;
         }
-        .pdf-footer::after { content:""; display:table; clear:both; }
-        .pf-left {
-            float: left; font-size: 12px; font-weight: 700;
+        /* Fila 1: redes y contacto */
+        .pf-row1 {
+            padding: 14px 44px 12px 44px;
+            display: block; overflow: hidden; width: 794px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .pf-row1::after { content:""; display:table; clear:both; }
+        /* Columna izquierda: redes sociales */
+        .pf-social { float: left; }
+        .pf-social-item {
+            display: inline-block; margin-right: 18px;
+            font-size: 10px; color: rgba(255,255,255,0.75);
+            font-family: Arial, Helvetica, sans-serif;
+            vertical-align: middle;
+        }
+        .pf-social-icon {
+            display: inline-block; width: 14px; height: 14px;
+            border-radius: 3px; margin-right: 4px;
+            vertical-align: middle; text-align: center;
+            font-size: 9px; font-weight: 900; line-height: 14px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .pf-icon-fb  { background: #1877F2; color: white; }
+        .pf-icon-ig  { background: #E1306C; color: white; }
+        .pf-icon-wa  { background: #25D366; color: white; }
+        /* Columna derecha: web y correo */
+        .pf-contact { float: right; text-align: right; }
+        .pf-contact-item {
+            display: block; font-size: 10px;
+            color: rgba(255,255,255,0.75);
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.7;
+        }
+        .pf-contact-item b { color: #FFEB3B; font-weight: 700; }
+        /* Fila 2: marca + RNT */
+        .pf-row2 {
+            padding: 9px 44px;
+            display: block; overflow: hidden; width: 794px;
+        }
+        .pf-row2::after { content:""; display:table; clear:both; }
+        .pf-brand {
+            float: left; font-size: 12px; font-weight: 900;
             color: #FFEB3B; font-family: Arial, Helvetica, sans-serif;
         }
         .pf-dot {
@@ -333,8 +373,9 @@
             background: #4CAF50; border-radius: 50%;
             margin: 0 7px; vertical-align: middle;
         }
-        .pf-right {
-            float: right; font-size: 11px; color: #757575;
+        .pf-tagline {
+            float: right; font-size: 10px;
+            color: rgba(255,255,255,0.4);
             font-family: Arial, Helvetica, sans-serif;
         }
     </style>
@@ -496,8 +537,29 @@
 
     <!-- FOOTER -->
     <div class="pdf-footer">
-        <span class="pf-left">LUMO Travels<span class="pf-dot"></span>RNT 278559</span>
-        <span class="pf-right">Propuesta generada con amor</span>
+        <!-- Fila 1: redes + contacto -->
+        <div class="pf-row1">
+            <div class="pf-social">
+                <span class="pf-social-item">
+                    <span class="pf-social-icon pf-icon-fb">f</span>LUMO Travels
+                </span>
+                <span class="pf-social-item">
+                    <span class="pf-social-icon pf-icon-ig">in</span>lumo_travels
+                </span>
+                <span class="pf-social-item">
+                    <span class="pf-social-icon pf-icon-wa">W</span>300 729 6639
+                </span>
+            </div>
+            <div class="pf-contact">
+                <span class="pf-contact-item"><b>www.tulumo.com</b></span>
+                <span class="pf-contact-item">info@tulumo.com</span>
+            </div>
+        </div>
+        <!-- Fila 2: marca -->
+        <div class="pf-row2">
+            <span class="pf-brand">LUMO Travels<span class="pf-dot"></span>RNT 278559</span>
+            <span class="pf-tagline">Iluminando tus Aventuras</span>
+        </div>
     </div>
 
 </div>
