@@ -14,40 +14,41 @@
         }
     </script>
     <style>
-        /* Mantenemos el PDF oculto de la vista del usuario, pero vivo para la cámara */
+        /* El wrapper oculto pero con dimensiones exactas de A4 (794px) */
         #pdf-wrapper {
             position: absolute;
             left: -9999px;
             top: 0;
-            width: 800px; /* ANCHO FIJO ESTRICTO PARA EVITAR DESBORDES */
+            width: 794px;
             background-color: white;
         }
 
         #pdf-template {
-            width: 800px;
+            width: 794px;
             font-family: 'Arial', sans-serif;
             color: #2D2D2D;
             background: white;
             padding: 0;
             margin: 0;
+            box-sizing: border-box; /* Vital para que nada se salga */
         }
 
         .pdf-header {
             background-color: #E6FF00;
-            padding: 30px 20px;
+            padding: 25px 20px;
             text-align: center;
         }
 
         .legal-banner {
             background-color: #f3f4f6;
-            padding: 12px;
+            padding: 8px;
             text-align: center;
-            border-bottom: 5px solid #E6FF00;
+            border-bottom: 4px solid #E6FF00;
         }
 
         .img-box {
             width: 100%;
-            height: 400px; /* Altura controlada */
+            height: 300px; /* Tamaño de foto reducido y estético */
             background: #eee;
             overflow: hidden;
         }
@@ -55,26 +56,27 @@
         .img-box img {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Ajusta sin deformar ni salirse */
+            object-fit: cover; 
             display: block;
         }
 
         .pdf-content {
-            padding: 40px 50px;
+            padding: 30px 45px; /* Márgenes internos limpios */
         }
 
-        /* Diseño de inclusiones LUMO */
+        /* Diseño de inclusiones LUMO ajustado */
         .inclusion-item {
             background: white;
-            border-left: 6px solid #E6FF00;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 0 10px 10px 0;
-            font-size: 18px;
+            border-left: 5px solid #E6FF00;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+            font-size: 14px; /* Texto normalizado */
             color: #333;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
             display: flex;
             align-items: center;
+            border: 1px solid #f9f9f9;
         }
     </style>
 </head>
@@ -83,34 +85,34 @@
     <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-dark mb-2">🍋 LUMO Travels</h1>
-            <p class="text-gray-500">Generador de Propuestas (V1.3 Corrección)</p>
+            <p class="text-gray-500">Generador de Propuestas (V1.4 - Proporciones A4)</p>
         </div>
 
         <form id="lumo-form" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Hotel / Destino</label>
-                    <input type="text" id="hotel" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: Hotel Isla Bonita">
+                    <input type="text" id="hotel" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: San Andrés, Hotel Isla Bonita">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Fechas de Viaje</label>
-                    <input type="text" id="fechas" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: 10 al 13 de Junio 2026">
+                    <input type="text" id="fechas" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: 10 al 13 de junio de 2026">
                 </div>
             </div>
 
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-1">Precio Total INVERSIÓN</label>
-                <input type="text" id="precio" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: $2.220.000">
+                <input type="text" id="precio" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: $2.220.000 por pareja">
             </div>
 
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-1">Inclusiones (Un ítem por línea)</label>
-                <textarea id="inclusiones" rows="5" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Vuelos desde Medellín&#10;Traslados privados&#10;Seguro médico"></textarea>
+                <textarea id="inclusiones" rows="5" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Vuelos ida y vuelta desde Medellín&#10;Traslados PRIVADOS&#10;Seguro médico"></textarea>
             </div>
 
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-1">Términos Legales</label>
-                <textarea id="legales" rows="4" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none text-sm" placeholder="Tarifa sujeta a disponibilidad. No incluye tarjeta de entrada..."></textarea>
+                <textarea id="legales" rows="3" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none text-sm" placeholder="Tarifa sujeta a disponibilidad. No incluye tarjeta de entrada a la isla."></textarea>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -134,12 +136,12 @@
         <div id="pdf-template">
             
             <div class="pdf-header">
-                <h1 style="font-size: 45px; font-weight: 900; margin: 0; color: #2D2D2D;">LUMO Travels</h1>
-                <p style="margin: 5px 0 0 0; font-size: 18px; color: #444; font-weight: bold;">Tu próximo destino comienza aquí 🍋☀️</p>
+                <h1 style="font-size: 32px; font-weight: 900; margin: 0; color: #2D2D2D;">LUMO Travels</h1>
+                <p style="margin: 4px 0 0 0; font-size: 14px; color: #444; font-weight: bold;">Tu próximo destino comienza aquí 🍋☀️</p>
             </div>
             
             <div class="legal-banner">
-                <p style="margin: 0; font-size: 13px; font-weight: bold; color: #555;">AGENCIA LEGALMENTE CONSTITUIDA | RNT: 278559</p>
+                <p style="margin: 0; font-size: 10px; font-weight: bold; color: #555;">AGENCIA LEGALMENTE CONSTITUIDA | RNT: 278559</p>
             </div>
 
             <div class="img-box">
@@ -147,29 +149,29 @@
             </div>
 
             <div class="pdf-content">
-                <h2 id="pdf-hotel" style="font-size: 38px; color: #2D2D2D; margin: 0 0 10px 0; font-weight: 900;">Destino</h2>
-                <p id="pdf-fechas" style="font-size: 22px; color: #666; font-weight: bold; margin: 0 0 35px 0;">📅 Fechas</p>
+                <h2 id="pdf-hotel" style="font-size: 26px; color: #2D2D2D; margin: 0 0 8px 0; font-weight: 900;">Destino</h2>
+                <p id="pdf-fechas" style="font-size: 15px; color: #666; font-weight: bold; margin: 0 0 25px 0;">📅 Fechas</p>
 
-                <div style="background: #fafafa; padding: 30px; border-radius: 12px; border: 2px dashed #e5e7eb;">
-                    <h3 style="font-size: 24px; margin: 0 0 25px 0; color: #2D2D2D; font-weight: 900;">✨ Tu paquete incluye:</h3>
+                <div style="background: #fafafa; padding: 25px; border-radius: 8px; border: 1px dashed #e5e7eb;">
+                    <h3 style="font-size: 18px; margin: 0 0 15px 0; color: #2D2D2D; font-weight: 900;">✨ Tu paquete incluye:</h3>
                     <div id="pdf-inclusiones">
                         </div>
                 </div>
             </div>
 
-            <div class="img-box" style="margin-top: 20px;">
+            <div class="img-box" style="margin-top: 10px;">
                 <img id="pdf-img2" src="" style="display: none;">
             </div>
 
             <div class="pdf-content">
-                <div style="background: #E6FF00; padding: 40px; text-align: center; border-radius: 16px; margin-bottom: 30px;">
-                    <p style="margin: 0; font-size: 18px; color: #333; font-weight: bold; letter-spacing: 2px;">INVERSIÓN TOTAL DE TU VIAJE</p>
-                    <p id="pdf-precio" style="margin: 15px 0 0 0; font-size: 50px; font-weight: 900; color: #000;"></p>
+                <div style="background: #E6FF00; padding: 25px; text-align: center; border-radius: 12px; margin-bottom: 25px;">
+                    <p style="margin: 0; font-size: 13px; color: #333; font-weight: bold; letter-spacing: 1px;">INVERSIÓN TOTAL DE TU VIAJE</p>
+                    <p id="pdf-precio" style="margin: 10px 0 0 0; font-size: 32px; font-weight: 900; color: #000;"></p>
                 </div>
                 
-                <div style="background: #f8f9fa; padding: 25px; border-left: 5px solid #ccc;">
-                    <h4 style="font-size: 18px; font-weight: bold; margin: 0 0 10px 0; color: #2D2D2D;">⚠️ Términos y Condiciones Legales:</h4>
-                    <p id="pdf-legales" style="font-size: 15px; color: #555; line-height: 1.6; margin: 0; text-align: justify;"></p>
+                <div style="background: #f8f9fa; padding: 20px; border-left: 4px solid #ccc;">
+                    <h4 style="font-size: 14px; font-weight: bold; margin: 0 0 8px 0; color: #2D2D2D;">⚠️ Términos y Condiciones Legales:</h4>
+                    <p id="pdf-legales" style="font-size: 11px; color: #555; line-height: 1.5; margin: 0; text-align: justify;"></p>
                 </div>
             </div>
 
@@ -221,7 +223,7 @@
                     let textoLimpio = linea.replace('✅', '').trim();
                     const div = document.createElement('div');
                     div.className = 'inclusion-item';
-                    div.innerHTML = `<span style="margin-right: 15px;">✅</span> <strong>${textoLimpio}</strong>`;
+                    div.innerHTML = `<span style="margin-right: 12px; font-size: 16px;">✅</span> <strong>${textoLimpio}</strong>`;
                     divInc.appendChild(div);
                 }
             });
@@ -230,27 +232,27 @@
             await cargarImagen(document.getElementById('foto1'), 'pdf-img1');
             await cargarImagen(document.getElementById('foto2'), 'pdf-img2');
 
-            // --- LA SOLUCIÓN DEFINITIVA PARA LA LIBRERÍA ---
+            // --- LA CONFIGURACIÓN CORREGIDA ---
             const elementoPDF = document.getElementById('pdf-template');
 
             const opcionesPDF = {
-                margin: [10, 0, 10, 0], // Márgenes arriba y abajo
+                margin: 0, // ¡CERO MARGEN! Esto es lo que estaba empujando el diseño hacia la derecha
                 filename: `Propuesta_LUMO_${hotel.replace(/\s+/g, '_')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2, 
                     useCORS: true,
-                    scrollY: 0, // ¡ESTO ELIMINA EL ESPACIO EN BLANCO ARRIBA!
+                    scrollY: 0, 
                     scrollX: 0,
-                    windowWidth: 800 // ¡ESTO EVITA QUE SE SALGAN LAS FOTOS!
+                    windowWidth: 794 // Ancho exacto del A4, igual que en el CSS
                 },
-                jsPDF: { unit: 'px', format: [800, 1131], orientation: 'portrait' } // Proporción A4 exacta en pixeles
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
             };
 
             html2pdf().set(opcionesPDF).from(elementoPDF).save().then(() => {
                 const textoWhatsApp = `¡Hola! 🏝️ Aquí tienes la propuesta formal de *LUMO Travels* para tu viaje. 🍋☀️\n\n📌 *DESTINO:* ${hotel}\n📅 *FECHAS:* ${fechas}\n💰 *INVERSIÓN:* ${precio}\n\nEn el PDF adjunto verás las fotos y el detalle profesional de lo que te incluimos. También incluimos nuestra información legal (*RNT 278559*) para que reserves con total seguridad. 🛡️✅\n\n*¿Qué te parece la propuesta? Si me das el OK, procedemos a verificar disponibilidad de vuelos ahora mismo.* ✈️`;
                 navigator.clipboard.writeText(textoWhatsApp);
-                alert("✅ ¡LISTO! Revisa el PDF, ahora sí debe estar perfecto y ajustado.");
+                alert("✅ ¡Éxito! Textos reducidos y alineación centrada aplicada.");
             });
         }
     </script>
