@@ -565,7 +565,7 @@
 </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 /* ────────────────────────────────────
    UTILIDADES
 ──────────────────────────────────── */
@@ -661,7 +661,7 @@ async function prepararTemplate({ hotel, fechas, precio, inclusiones, legales, f
 /* ────────────────────────────────────
    GENERAR PDF
 ──────────────────────────────────── */
-async function generarTodo() {
+window.generarTodo = async function generarTodo() {
     const hotel       = document.getElementById("hotel").value.trim();
     const fechas      = document.getElementById("fechas").value.trim();
     const precio      = document.getElementById("precio").value.trim();
