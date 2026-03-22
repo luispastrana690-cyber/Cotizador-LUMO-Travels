@@ -14,13 +14,12 @@
         }
     </script>
     <style>
-        /* El wrapper oculto pero con dimensiones exactas de A4 (794px) */
+        /* La plantilla oculta de forma segura sin romper las coordenadas X/Y */
         #pdf-wrapper {
-            position: absolute;
-            left: -9999px;
-            top: 0;
-            width: 794px;
+            display: none; /* Oculto por defecto */
+            width: 794px; /* Ancho exacto de A4 */
             background-color: white;
+            box-sizing: border-box;
         }
 
         #pdf-template {
@@ -30,7 +29,6 @@
             background: white;
             padding: 0;
             margin: 0;
-            box-sizing: border-box; /* Vital para que nada se salga */
         }
 
         .pdf-header {
@@ -48,7 +46,7 @@
 
         .img-box {
             width: 100%;
-            height: 300px; /* Tamaño de foto reducido y estético */
+            height: 300px;
             background: #eee;
             overflow: hidden;
         }
@@ -61,7 +59,7 @@
         }
 
         .pdf-content {
-            padding: 30px 45px; /* Márgenes internos limpios */
+            padding: 30px 45px;
         }
 
         /* Diseño de inclusiones LUMO ajustado */
@@ -71,7 +69,7 @@
             padding: 10px 15px;
             margin-bottom: 10px;
             border-radius: 0 8px 8px 0;
-            font-size: 14px; /* Texto normalizado */
+            font-size: 14px;
             color: #333;
             box-shadow: 0 2px 6px rgba(0,0,0,0.04);
             display: flex;
@@ -80,12 +78,12 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 md:p-8">
+<body class="bg-gray-100 min-h-screen p-4 md:p-8 relative">
 
-    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8 relative z-10">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-dark mb-2">🍋 LUMO Travels</h1>
-            <p class="text-gray-500">Generador de Propuestas (V1.4 - Proporciones A4)</p>
+            <p class="text-gray-500">Generador de Propuestas (V1.5 - Alineación Perfecta)</p>
         </div>
 
         <form id="lumo-form" class="space-y-6">
@@ -209,13 +207,11 @@
                 return;
             }
 
-            // 1. Llenar los textos
             document.getElementById('pdf-hotel').innerText = hotel;
             document.getElementById('pdf-fechas').innerText = "📅 " + fechas;
             document.getElementById('pdf-precio').innerText = precio;
             document.getElementById('pdf-legales').innerText = legales;
 
-            // 2. Llenar inclusiones
             const divInc = document.getElementById('pdf-inclusiones');
             divInc.innerHTML = '';
             inclusionesText.split('\n').forEach(linea => {
@@ -228,31 +224,43 @@
                 }
             });
 
-            // 3. Cargar imágenes
             await cargarImagen(document.getElementById('foto1'), 'pdf-img1');
             await cargarImagen(document.getElementById('foto2'), 'pdf-img2');
 
-            // --- LA CONFIGURACIÓN CORREGIDA ---
-            const elementoPDF = document.getElementById('pdf-template');
+            // --- EL TRUCO DEFINITIVO DE ALINEACIÓN ---
+            const elementoPDF = document.getElementById('pdf-wrapper');
+            
+            // Ponemos la plantilla en 0,0 pero detrás de la página web para que la cámara no se confunda
+            elementoPDF.style.display = 'block';
+            elementoPDF.style.position = 'absolute';
+            elementoPDF.style.top = '0';
+            elementoPDF.style.left = '0';
+            elementoPDF.style.zIndex = '-1000';
 
             const opcionesPDF = {
-                margin: 0, // ¡CERO MARGEN! Esto es lo que estaba empujando el diseño hacia la derecha
+                margin: 0,
                 filename: `Propuesta_LUMO_${hotel.replace(/\s+/g, '_')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2, 
                     useCORS: true,
+                    x: 0, 
+                    y: 0,
                     scrollY: 0, 
                     scrollX: 0,
-                    windowWidth: 794 // Ancho exacto del A4, igual que en el CSS
+                    windowWidth: 794 
                 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+                // Forzamos pixeles en lugar de milímetros para un mapeo 1:1 exacto
+                jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' } 
             };
 
             html2pdf().set(opcionesPDF).from(elementoPDF).save().then(() => {
+                // Volvemos a esconder la plantilla
+                elementoPDF.style.display = 'none';
+
                 const textoWhatsApp = `¡Hola! 🏝️ Aquí tienes la propuesta formal de *LUMO Travels* para tu viaje. 🍋☀️\n\n📌 *DESTINO:* ${hotel}\n📅 *FECHAS:* ${fechas}\n💰 *INVERSIÓN:* ${precio}\n\nEn el PDF adjunto verás las fotos y el detalle profesional de lo que te incluimos. También incluimos nuestra información legal (*RNT 278559*) para que reserves con total seguridad. 🛡️✅\n\n*¿Qué te parece la propuesta? Si me das el OK, procedemos a verificar disponibilidad de vuelos ahora mismo.* ✈️`;
                 navigator.clipboard.writeText(textoWhatsApp);
-                alert("✅ ¡Éxito! Textos reducidos y alineación centrada aplicada.");
+                alert("✅ ¡Magia pura, socio! Documento centrado y listo.");
             });
         }
     </script>
