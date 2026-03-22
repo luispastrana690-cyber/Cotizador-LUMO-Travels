@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Propuestas | LUMO Travels</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- CAMBIO CLAVE: Usamos jsPDF + html2canvas por separado, mucho más controlable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
@@ -15,426 +14,522 @@
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
+        body { font-family: 'Montserrat', sans-serif; background: #f3f4f6; }
 
-        body { font-family: 'Montserrat', sans-serif; }
-
+        /* ── Loading ── */
         #loading-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: rgba(255,255,255,0.97);
-            z-index: 99999;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            position: fixed; top:0; left:0; width:100vw; height:100vh;
+            background: rgba(255,255,255,0.97);
+            z-index: 99999; display:none;
+            flex-direction:column; justify-content:center; align-items:center;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+            width:56px; height:56px;
+            border:5px solid #E6FF00; border-top-color:transparent;
+            border-radius:50%; animation: spin 0.8s linear infinite;
         }
 
-        /*
-         * LA SOLUCIÓN AL PDF EN BLANCO:
-         * El elemento debe estar EN EL FLUJO DEL DOCUMENTO pero fuera de la pantalla visible.
-         * position: fixed con left: -9999px es la técnica más confiable.
-         * html2canvas puede capturar elementos off-screen siempre que tengan dimensiones reales.
-         */
+        /* ── Form inputs ── */
+        .form-input {
+            width:100%; border:2px solid #e5e7eb; border-radius:10px;
+            padding:10px 14px; font-family:'Montserrat',sans-serif; font-size:14px;
+            outline:none; transition:border-color 0.2s; box-sizing:border-box;
+        }
+        .form-input:focus { border-color:#E6FF00; box-shadow:0 0 0 3px rgba(230,255,0,0.25); }
+        .btn-gen {
+            width:100%; background:#E6FF00; color:#2D2D2D; font-weight:900;
+            font-size:18px; padding:14px; border-radius:12px; border:none;
+            cursor:pointer; font-family:'Montserrat',sans-serif; transition:all 0.2s;
+        }
+        .btn-gen:hover { background:#d4ec00; transform:translateY(-1px); box-shadow:0 6px 20px rgba(230,255,0,0.4); }
+
+        /* ══════════════════════════════════════════════
+           PDF WRAPPER
+           • position:fixed + left:-9999px = fuera de
+             pantalla pero con dimensiones computadas.
+           • NUNCA display:none → html2canvas no puede
+             medir elementos ocultos.
+        ══════════════════════════════════════════════ */
         #pdf-wrapper {
             position: fixed;
             top: 0;
-            left: -9999px;   /* Fuera de pantalla pero en el DOM */
+            left: -9999px;
             width: 794px;
             background: white;
             z-index: -1;
-            visibility: hidden; /* Invisible para el usuario */
         }
 
-        /* Cuando estamos capturando, lo hacemos visible para html2canvas */
-        #pdf-wrapper.capturing {
-            visibility: visible;
-        }
+        /* ══════════════════════════════════════════════
+           ESTILOS DEL PDF
+           Reglas críticas para html2canvas:
+           1. display:block en vez de flex/grid
+           2. Sin emojis en texto — html2canvas los
+              renderiza de forma inconsistente
+           3. Todos los anchos explícitos en px
+           4. box-sizing: border-box en todo
+           5. float para layouts de 2 columnas
+        ══════════════════════════════════════════════ */
+        #pdf-template * { box-sizing: border-box; }
 
         #pdf-template {
             width: 794px;
-            font-family: 'Montserrat', Arial, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             color: #2D2D2D;
             background: white;
-            padding: 0; margin: 0;
-            box-sizing: border-box;
-        }
-
-        .pdf-header {
-            background-color: #E6FF00;
-            padding: 28px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .legal-banner {
-            background-color: #2D2D2D;
-            padding: 8px 40px;
-            text-align: center;
-        }
-
-        .img-box {
-            width: 794px;
-            height: 300px;
-            background: #ddd;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .img-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            margin: 0; padding: 0;
             display: block;
         }
 
-        .img-placeholder {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-            font-size: 14px;
+        /* HEADER */
+        .t-header {
+            background-color: #E6FF00;
+            padding: 24px 40px 22px 40px;
+            display: block;
+            width: 794px;
         }
-
-        .pdf-content { padding: 30px 45px; }
-
-        .inclusion-item {
-            background: white;
-            padding: 10px 15px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            font-size: 13px;
-            color: #333;
-            display: flex;
-            align-items: center;
-            border-left: 4px solid #E6FF00;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-        }
-
-        /* Estilos del formulario */
-        .form-input {
-            width: 100%;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 10px 14px;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s;
-            box-sizing: border-box;
-        }
-        .form-input:focus { border-color: #E6FF00; box-shadow: 0 0 0 3px rgba(230,255,0,0.2); }
-
-        .btn-generate {
-            width: 100%;
-            background: #E6FF00;
-            color: #2D2D2D;
+        .t-header-title {
+            font-size: 34px;
             font-weight: 900;
-            font-size: 18px;
-            padding: 14px;
-            border-radius: 12px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'Montserrat', sans-serif;
-            letter-spacing: 0.5px;
+            color: #2D2D2D;
+            margin: 0 0 5px 0;
+            line-height: 1.1;
+            font-family: Arial, Helvetica, sans-serif;
+            display: block;
         }
-        .btn-generate:hover { background: #d4ec00; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(230,255,0,0.4); }
-        .btn-generate:active { transform: translateY(0); }
+        .t-header-sub {
+            font-size: 13px;
+            color: #555;
+            font-weight: 700;
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            display: block;
+        }
+
+        /* BANNER LEGAL */
+        .t-legal-banner {
+            background-color: #2D2D2D;
+            padding: 9px 40px;
+            text-align: center;
+            width: 794px;
+            display: block;
+        }
+        .t-legal-banner p {
+            margin: 0;
+            font-size: 11px;
+            font-weight: 700;
+            color: #E6FF00;
+            letter-spacing: 1.5px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        /* FOTOS: ancho fijo 794px */
+        .t-img-box {
+            width: 794px;
+            height: 280px;
+            background: #e0e0e0;
+            overflow: hidden;
+            display: block;
+            line-height: 0;
+            position: relative;
+        }
+        .t-img-box img {
+            width: 794px;
+            height: 280px;
+            object-fit: cover;
+            display: block;
+            position: absolute;
+            top: 0; left: 0;
+        }
+        .t-img-placeholder {
+            width: 794px;
+            height: 280px;
+            background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+            display: table;
+            position: absolute;
+            top: 0; left: 0;
+        }
+        .t-img-placeholder span {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: center;
+            color: #aaa;
+            font-size: 14px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        /* CONTENIDO */
+        .t-content {
+            padding: 28px 44px;
+            background: white;
+            display: block;
+            width: 794px;
+        }
+        .t-destination {
+            font-size: 26px;
+            font-weight: 900;
+            color: #2D2D2D;
+            margin: 0 0 6px 0;
+            font-family: Arial, Helvetica, sans-serif;
+            display: block;
+        }
+        .t-dates {
+            font-size: 14px;
+            color: #555;
+            font-weight: 700;
+            margin: 0 0 22px 0;
+            font-family: Arial, Helvetica, sans-serif;
+            display: block;
+        }
+
+        /* INCLUSIONES */
+        .t-inc-box {
+            background: #fafafa;
+            padding: 22px;
+            border-radius: 8px;
+            border: 1.5px dashed #e0e0e0;
+            display: block;
+        }
+        .t-inc-title {
+            font-size: 15px;
+            font-weight: 900;
+            color: #2D2D2D;
+            margin: 0 0 14px 0;
+            font-family: Arial, Helvetica, sans-serif;
+            display: block;
+        }
+        .t-inc-item {
+            display: block;
+            background: white;
+            border-left: 4px solid #E6FF00;
+            padding: 9px 14px;
+            margin-bottom: 8px;
+            border-radius: 0 6px 6px 0;
+            font-size: 13px;
+            font-weight: 700;
+            color: #333;
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.4;
+            width: 100%;
+        }
+
+        /* PRECIO */
+        .t-price-box {
+            background: #E6FF00;
+            padding: 26px 22px;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 22px;
+            display: block;
+        }
+        .t-price-label {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            color: #444;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-family: Arial, Helvetica, sans-serif;
+            display: block;
+        }
+        .t-price-value {
+            margin: 0;
+            font-size: 36px;
+            font-weight: 900;
+            color: #000;
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.1;
+            display: block;
+        }
+
+        /* LEGALES */
+        .t-legal-box {
+            background: #f8f9fa;
+            padding: 18px 20px;
+            border-left: 4px solid #bbb;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 22px;
+            display: block;
+        }
+        .t-legal-title {
+            font-size: 13px;
+            font-weight: 900;
+            margin: 0 0 7px 0;
+            color: #2D2D2D;
+            font-family: Arial, Helvetica, sans-serif;
+            display: block;
+        }
+        .t-legal-text {
+            font-size: 11px;
+            color: #555;
+            line-height: 1.6;
+            margin: 0;
+            text-align: justify;
+            font-family: Arial, Helvetica, sans-serif;
+            display: block;
+        }
+
+        /* FOOTER — float en vez de flex */
+        .t-footer {
+            padding: 14px 44px 18px 44px;
+            border-top: 3px solid #E6FF00;
+            background: white;
+            width: 794px;
+            display: block;
+            overflow: hidden;
+        }
+        .t-footer::after { content:''; display:table; clear:both; }
+        .t-footer-left {
+            float: left;
+            font-size: 11px;
+            color: #999;
+            font-weight: 700;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .t-footer-right {
+            float: right;
+            font-size: 11px;
+            color: #999;
+            font-family: Arial, Helvetica, sans-serif;
+        }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 md:p-8">
+<body>
 
-    <!-- Pantalla de carga -->
-    <div id="loading-screen">
-        <div style="width:60px;height:60px;border:5px solid #E6FF00;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-        <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-        <h2 style="font-family:'Montserrat',sans-serif;font-size:22px;font-weight:900;margin-top:20px;color:#2D2D2D;">Armando tu propuesta...</h2>
-        <p style="font-family:'Montserrat',sans-serif;color:#888;margin-top:8px;">Esto toma solo un momento 🍋</p>
+<!-- Loading -->
+<div id="loading-screen">
+    <div class="spinner"></div>
+    <p style="font-family:'Montserrat',sans-serif;font-size:20px;font-weight:900;margin-top:20px;color:#2D2D2D;">Armando tu propuesta...</p>
+    <p style="font-family:'Montserrat',sans-serif;color:#888;margin-top:6px;font-size:14px;">Esto toma solo un momento</p>
+</div>
+
+<!-- Formulario -->
+<div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-8 my-8">
+    <div class="text-center mb-8">
+        <div style="font-size:42px;margin-bottom:8px;">🍋</div>
+        <h1 style="font-family:'Montserrat',sans-serif;font-size:28px;font-weight:900;color:#2D2D2D;margin:0;">LUMO Travels</h1>
+        <p style="color:#999;font-size:14px;margin-top:6px;font-family:'Montserrat',sans-serif;">Generador de Propuestas Comerciales</p>
     </div>
 
-    <!-- Formulario -->
-    <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-8">
-        <div class="text-center mb-8">
-            <div style="font-size:40px;margin-bottom:8px;">🍋</div>
-            <h1 style="font-family:'Montserrat',sans-serif;font-size:28px;font-weight:900;color:#2D2D2D;">LUMO Travels</h1>
-            <p style="color:#999;font-size:14px;margin-top:4px;">Generador de Propuestas Comerciales</p>
+    <div class="space-y-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Hotel / Destino</label>
+                <input type="text" id="hotel" class="form-input" placeholder="Ej: San Andres, Hotel Isla Bonita">
+            </div>
+            <div>
+                <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Fechas de Viaje</label>
+                <input type="text" id="fechas" class="form-input" placeholder="Ej: 10 al 13 de junio de 2026">
+            </div>
         </div>
 
-        <div class="space-y-5">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">🏨 Hotel / Destino</label>
-                    <input type="text" id="hotel" class="form-input" placeholder="Ej: San Andrés, Hotel Isla Bonita">
-                </div>
-                <div>
-                    <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">📅 Fechas de Viaje</label>
-                    <input type="text" id="fechas" class="form-input" placeholder="Ej: 10 al 13 de junio de 2026">
-                </div>
-            </div>
-
-            <div>
-                <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">💰 Precio Total INVERSIÓN</label>
-                <input type="text" id="precio" class="form-input" placeholder="Ej: $2.220.000 por pareja">
-            </div>
-
-            <div>
-                <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">✅ Inclusiones <span style="font-weight:400;color:#999">(un ítem por línea)</span></label>
-                <textarea id="inclusiones" rows="5" class="form-input" style="resize:vertical;" placeholder="Vuelos ida y vuelta desde Medellín&#10;Traslados PRIVADOS&#10;Seguro médico&#10;2 noches en hotel seleccionado"></textarea>
-            </div>
-
-            <div>
-                <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">⚠️ Términos Legales</label>
-                <textarea id="legales" rows="3" class="form-input" style="resize:vertical;" placeholder="Tarifa sujeta a disponibilidad. Precios en pesos colombianos..."></textarea>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">📸 Foto Principal</label>
-                    <input type="file" id="foto1" accept="image/*" style="width:100%;font-size:13px;">
-                </div>
-                <div>
-                    <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">📸 Foto Secundaria</label>
-                    <input type="file" id="foto2" accept="image/*" style="width:100%;font-size:13px;">
-                </div>
-            </div>
-
-            <button class="btn-generate" onclick="generarTodo()">
-                🚀 Generar PDF
-            </button>
+        <div>
+            <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Precio Total INVERSION</label>
+            <input type="text" id="precio" class="form-input" placeholder="Ej: $2.220.000 por pareja">
         </div>
+
+        <div>
+            <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Inclusiones <span style="font-weight:400;color:#999">(un item por linea)</span></label>
+            <textarea id="inclusiones" rows="5" class="form-input" style="resize:vertical;" placeholder="Vuelos ida y vuelta desde Medellin&#10;Traslados PRIVADOS&#10;Seguro medico&#10;2 noches en hotel seleccionado"></textarea>
+        </div>
+
+        <div>
+            <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Terminos Legales</label>
+            <textarea id="legales" rows="3" class="form-input" style="resize:vertical;" placeholder="Tarifa sujeta a disponibilidad..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Foto Principal</label>
+                <input type="file" id="foto1" accept="image/*" style="width:100%;font-size:13px;">
+            </div>
+            <div>
+                <label style="display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:6px;">Foto Secundaria</label>
+                <input type="file" id="foto2" accept="image/*" style="width:100%;font-size:13px;">
+            </div>
+        </div>
+
+        <button class="btn-gen" onclick="generarTodo()">🚀 Generar PDF</button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════
+     PLANTILLA PDF (off-screen)
+═══════════════════════════════ -->
+<div id="pdf-wrapper">
+<div id="pdf-template">
+
+    <div class="t-header">
+        <p class="t-header-title">LUMO Travels</p>
+        <p class="t-header-sub">Tu proximo destino comienza aqui</p>
     </div>
 
-    <!-- ==========================================
-         PLANTILLA PDF - FUERA DE PANTALLA
-         La clave: fixed + left:-9999px = html2canvas
-         puede capturarla con dimensiones correctas
-         ========================================== -->
-    <div id="pdf-wrapper">
-        <div id="pdf-template">
+    <div class="t-legal-banner">
+        <p>AGENCIA LEGALMENTE CONSTITUIDA | RNT: 278559</p>
+    </div>
 
-            <!-- Header -->
-            <div class="pdf-header">
-                <div>
-                    <div style="font-size:30px;font-weight:900;color:#2D2D2D;line-height:1;">LUMO Travels</div>
-                    <div style="font-size:13px;color:#555;margin-top:4px;font-weight:600;">Tu próximo destino comienza aquí 🍋☀️</div>
-                </div>
-                <div style="text-align:right;">
-                    <div style="font-size:36px;">🍋</div>
-                </div>
-            </div>
+    <!-- Foto 1 -->
+    <div class="t-img-box" id="img-box-1">
+        <div class="t-img-placeholder" id="ph1"><span>Sin imagen principal</span></div>
+        <img id="pdf-img1" src="" style="display:none;">
+    </div>
 
-            <!-- Banner legal -->
-            <div class="legal-banner">
-                <p style="margin:0;font-size:11px;font-weight:700;color:#E6FF00;letter-spacing:1.5px;">AGENCIA LEGALMENTE CONSTITUIDA | RNT: 278559</p>
-            </div>
-
-            <!-- Foto 1 -->
-            <div class="img-box" id="img-box-1">
-                <div class="img-placeholder" id="img-placeholder-1">Sin imagen principal</div>
-                <img id="pdf-img1" src="" style="display:none;width:100%;height:100%;object-fit:cover;">
-            </div>
-
-            <!-- Contenido principal -->
-            <div class="pdf-content">
-                <h2 id="pdf-hotel" style="font-size:26px;color:#2D2D2D;margin:0 0 6px 0;font-weight:900;"></h2>
-                <p id="pdf-fechas" style="font-size:15px;color:#666;font-weight:700;margin:0 0 24px 0;"></p>
-
-                <div style="background:#fafafa;padding:24px;border-radius:10px;border:1.5px dashed #e5e7eb;">
-                    <h3 style="font-size:17px;margin:0 0 14px 0;color:#2D2D2D;font-weight:900;">✨ Tu paquete incluye:</h3>
-                    <div id="pdf-inclusiones"></div>
-                </div>
-            </div>
-
-            <!-- Foto 2 -->
-            <div class="img-box" id="img-box-2">
-                <div class="img-placeholder" id="img-placeholder-2">Sin imagen secundaria</div>
-                <img id="pdf-img2" src="" style="display:none;width:100%;height:100%;object-fit:cover;">
-            </div>
-
-            <!-- Precio y legales -->
-            <div class="pdf-content">
-                <div style="background:#E6FF00;padding:28px;text-align:center;border-radius:14px;margin-bottom:24px;">
-                    <p style="margin:0;font-size:12px;color:#555;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Inversión Total de tu Viaje</p>
-                    <p id="pdf-precio" style="margin:10px 0 0 0;font-size:34px;font-weight:900;color:#000;"></p>
-                </div>
-
-                <div style="background:#f8f9fa;padding:20px;border-left:4px solid #ccc;border-radius:0 8px 8px 0;">
-                    <h4 style="font-size:13px;font-weight:900;margin:0 0 8px 0;color:#2D2D2D;">⚠️ Términos y Condiciones:</h4>
-                    <p id="pdf-legales" style="font-size:11px;color:#555;line-height:1.6;margin:0;text-align:justify;"></p>
-                </div>
-
-                <!-- Footer -->
-                <div style="margin-top:24px;padding-top:16px;border-top:2px solid #E6FF00;display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-size:11px;color:#999;font-weight:600;">LUMO Travels | RNT 278559</span>
-                    <span style="font-size:11px;color:#999;">Propuesta generada con ❤️</span>
-                </div>
-            </div>
-
+    <!-- Destino + Fechas + Inclusiones -->
+    <div class="t-content">
+        <p class="t-destination" id="pdf-hotel"></p>
+        <p class="t-dates" id="pdf-fechas"></p>
+        <div class="t-inc-box">
+            <p class="t-inc-title">Tu paquete incluye:</p>
+            <div id="pdf-inclusiones"></div>
         </div>
     </div>
 
-    <script>
-        // Convierte un File a base64 Data URL
-        function fileToDataURL(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = e => resolve(e.target.result);
-                reader.onerror = () => resolve(null); // Si falla, resolvemos null (sin imagen)
-                reader.readAsDataURL(file);
-            });
-        }
+    <!-- Foto 2 -->
+    <div class="t-img-box" id="img-box-2">
+        <div class="t-img-placeholder" id="ph2"><span>Sin imagen secundaria</span></div>
+        <img id="pdf-img2" src="" style="display:none;">
+    </div>
 
-        // Espera a que una imagen cargue completamente
-        function waitForImage(imgEl) {
-            return new Promise(resolve => {
-                if (imgEl.complete && imgEl.naturalHeight !== 0) {
-                    resolve();
-                } else {
-                    imgEl.onload = resolve;
-                    imgEl.onerror = resolve; // Resolvemos igual aunque falle
-                }
-            });
-        }
+    <!-- Precio + Legales + Footer -->
+    <div class="t-content">
+        <div class="t-price-box">
+            <p class="t-price-label">INVERSION TOTAL DE TU VIAJE</p>
+            <p class="t-price-value" id="pdf-precio"></p>
+        </div>
+        <div class="t-legal-box">
+            <p class="t-legal-title">Terminos y Condiciones:</p>
+            <p class="t-legal-text" id="pdf-legales"></p>
+        </div>
+    </div>
 
-        // Rellena los datos del template y espera que todo esté listo
-        async function prepararTemplate(datos) {
-            const { hotel, fechas, precio, inclusiones, legales, foto1, foto2 } = datos;
+    <div class="t-footer">
+        <span class="t-footer-left">LUMO Travels | RNT 278559</span>
+        <span class="t-footer-right">Propuesta generada con amor</span>
+    </div>
 
-            // Textos
-            document.getElementById('pdf-hotel').innerText = hotel;
-            document.getElementById('pdf-fechas').innerText = '📅 ' + fechas;
-            document.getElementById('pdf-precio').innerText = precio;
-            document.getElementById('pdf-legales').innerText = legales || 'Tarifa sujeta a disponibilidad.';
+</div>
+</div>
 
-            // Inclusiones
-            const divInc = document.getElementById('pdf-inclusiones');
-            divInc.innerHTML = '';
-            inclusiones.split('\n').forEach(linea => {
-                const texto = linea.replace('✅', '').trim();
-                if (!texto) return;
-                const div = document.createElement('div');
-                div.className = 'inclusion-item';
-                div.innerHTML = `<span style="margin-right:10px;font-size:15px;">✅</span><strong>${texto}</strong>`;
-                divInc.appendChild(div);
-            });
+<script>
+function fileToDataURL(file) {
+    return new Promise(resolve => {
+        const r = new FileReader();
+        r.onload  = e => resolve(e.target.result);
+        r.onerror = () => resolve(null);
+        r.readAsDataURL(file);
+    });
+}
 
-            // Imágenes: Cargamos como base64 primero, luego seteamos src
-            const imgEl1 = document.getElementById('pdf-img1');
-            const imgEl2 = document.getElementById('pdf-img2');
-            const promises = [];
+function waitForImage(img) {
+    return new Promise(resolve => {
+        if (img.complete && img.naturalHeight > 0) { resolve(); return; }
+        img.onload  = resolve;
+        img.onerror = resolve;
+    });
+}
 
-            if (foto1 && foto1.files[0]) {
-                const dataURL = await fileToDataURL(foto1.files[0]);
-                if (dataURL) {
-                    imgEl1.src = dataURL;
-                    imgEl1.style.display = 'block';
-                    document.getElementById('img-placeholder-1').style.display = 'none';
-                    promises.push(waitForImage(imgEl1));
-                }
-            }
+async function prepararTemplate({ hotel, fechas, precio, inclusiones, legales, foto1, foto2 }) {
+    // Textos (sin emojis — html2canvas los renderiza mal en algunos OS)
+    document.getElementById('pdf-hotel').innerText   = hotel;
+    document.getElementById('pdf-fechas').innerText  = 'Fechas: ' + fechas;
+    document.getElementById('pdf-precio').innerText  = precio;
+    document.getElementById('pdf-legales').innerText = legales || 'Tarifa sujeta a disponibilidad.';
 
-            if (foto2 && foto2.files[0]) {
-                const dataURL = await fileToDataURL(foto2.files[0]);
-                if (dataURL) {
-                    imgEl2.src = dataURL;
-                    imgEl2.style.display = 'block';
-                    document.getElementById('img-placeholder-2').style.display = 'none';
-                    promises.push(waitForImage(imgEl2));
-                }
-            }
+    // Inclusiones
+    const container = document.getElementById('pdf-inclusiones');
+    container.innerHTML = '';
+    inclusiones.split('\n').forEach(linea => {
+        const texto = linea.replace(/✅/g, '').trim();
+        if (!texto) return;
+        const div = document.createElement('div');
+        div.className = 't-inc-item';
+        div.innerText = '+ ' + texto;
+        container.appendChild(div);
+    });
 
-            // Esperamos que todas las imágenes carguen
-            await Promise.all(promises);
+    // Imagenes
+    const promesas = [];
 
-            // Pausa extra para asegurar render completo
-            await new Promise(r => setTimeout(r, 300));
-        }
+    async function cargarFoto(inputEl, imgId, phId) {
+        if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+        const dataURL = await fileToDataURL(inputEl.files[0]);
+        if (!dataURL) return;
+        const img = document.getElementById(imgId);
+        const ph  = document.getElementById(phId);
+        img.src           = dataURL;
+        img.style.display = 'block';
+        ph.style.display  = 'none';
+        promesas.push(waitForImage(img));
+    }
 
-        async function generarTodo() {
-            const hotel = document.getElementById('hotel').value.trim();
-            const fechas = document.getElementById('fechas').value.trim();
-            const precio = document.getElementById('precio').value.trim();
-            const inclusiones = document.getElementById('inclusiones').value.trim();
+    await cargarFoto(document.getElementById('foto1'), 'pdf-img1', 'ph1');
+    await cargarFoto(document.getElementById('foto2'), 'pdf-img2', 'ph2');
+    await Promise.all(promesas);
 
-            if (!hotel || !fechas || !precio || !inclusiones) {
-                alert('Por favor completa los campos: Destino, Fechas, Precio e Inclusiones.');
-                return;
-            }
+    // Pausa de seguridad para que el navegador termine el layout
+    await new Promise(r => setTimeout(r, 500));
+}
 
-            // Mostrar loading
-            document.getElementById('loading-screen').style.display = 'flex';
+async function generarTodo() {
+    const hotel       = document.getElementById('hotel').value.trim();
+    const fechas      = document.getElementById('fechas').value.trim();
+    const precio      = document.getElementById('precio').value.trim();
+    const inclusiones = document.getElementById('inclusiones').value.trim();
+    const legales     = document.getElementById('legales').value.trim();
 
-            try {
-                // 1. Preparar el template con los datos
-                await prepararTemplate({
-                    hotel,
-                    fechas,
-                    precio,
-                    inclusiones,
-                    legales: document.getElementById('legales').value.trim(),
-                    foto1: document.getElementById('foto1'),
-                    foto2: document.getElementById('foto2')
-                });
+    if (!hotel || !fechas || !precio || !inclusiones) {
+        alert('Por favor completa: Destino, Fechas, Precio e Inclusiones.');
+        return;
+    }
 
-                // 2. Hacer el wrapper visible para html2canvas
-                const wrapper = document.getElementById('pdf-wrapper');
-                wrapper.classList.add('capturing');
+    document.getElementById('loading-screen').style.display = 'flex';
 
-                // 3. Capturar con html2canvas
-                // CRÍTICO: scrollX/scrollY en 0, y el elemento tiene dimensiones fijas
-                const canvas = await html2canvas(document.getElementById('pdf-template'), {
-                    scale: 2,              // Alta resolución
-                    useCORS: true,
-                    allowTaint: true,      // Permite imágenes base64
-                    backgroundColor: '#ffffff',
-                    width: 794,
-                    scrollX: 0,
-                    scrollY: 0,
-                    logging: false
-                });
+    try {
+        await prepararTemplate({ hotel, fechas, precio, inclusiones, legales,
+            foto1: document.getElementById('foto1'),
+            foto2: document.getElementById('foto2') });
 
-                // 4. Ocultar wrapper nuevamente
-                wrapper.classList.remove('capturing');
+        const template = document.getElementById('pdf-template');
 
-                // 5. Crear PDF con jsPDF
-                const { jsPDF } = window.jspdf;
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const canvas = await html2canvas(template, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            width: 794,
+            windowWidth: 794,    // evita reflows por viewport
+            scrollX: 0,
+            scrollY: 0,
+            foreignObjectRendering: false,  // más estable en Chrome/Edge
+            logging: false
+        });
 
-                // Calculamos el alto del PDF basado en el contenido real
-                const pdfWidth = 794;
-                const pdfHeight = canvas.height / 2; // dividimos por scale (2)
+        const { jsPDF } = window.jspdf;
+        const imgData   = canvas.toDataURL('image/jpeg', 0.95);
+        const pdfW      = 794;
+        const pdfH      = Math.round(canvas.height / 2);  // /scale
 
-                const pdf = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'px',
-                    format: [pdfWidth, pdfHeight],
-                    compress: true
-                });
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: [pdfW, pdfH],
+            compress: true
+        });
 
-                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, '', 'FAST');
-                pdf.save(`Propuesta_LUMO_${hotel.replace(/\s+/g, '_')}.pdf`);
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, '', 'FAST');
+        pdf.save(`Propuesta_LUMO_${hotel.replace(/\s+/g, '_')}.pdf`);
 
-                // 6. Copiar mensaje WhatsApp
-                const textoWA = `¡Hola! 🏝️ Aquí tienes la propuesta formal de *LUMO Travels* para tu viaje. 🍋☀️\n\n📌 *DESTINO:* ${hotel}\n📅 *FECHAS:* ${fechas}\n💰 *INVERSIÓN:* ${precio}\n\nEn el PDF adjunto verás las fotos y el detalle completo. Nuestra información legal (*RNT 278559*) garantiza que reservas con total seguridad. 🛡️✅\n\n*¿Qué te parece la propuesta? Si me das el OK, verificamos disponibilidad de vuelos ahora mismo.* ✈️`;
+        // Mensaje WhatsApp al portapapeles
+        const msgWA = `Hola! Tu propuesta de *LUMO Travels* para ${hotel} esta lista.\n\nFechas: ${fechas}\nInversion: ${precio}\n\nEl PDF adjunto incluye fotos y detalle completo del paquete. Reserva con seguridad: *RNT 278559*.\n\n Si te parece bien, verificamos disponibilidad de vuelos ahora mismo.`;
+        try { await navigator.clipboard.writeText(msgWA); } catch(_) {}
 
-                try {
-                    await navigator.clipboard.writeText(textoWA);
-                } catch (e) {
-                    // Si falla el clipboard (algunos browsers lo bloquean), mostramos el texto
-                    console.warn('Clipboard no disponible:', e);
-                }
-
-            } catch (error) {
-                console.error('Error generando PDF:', error);
-                alert('Ocurrió un error al generar el PDF. Por favor intenta de nuevo.');
-            } finally {
-                document.getElementById('loading-screen').style.display = 'none';
-            }
-        }
-    </script>
+    } catch (err) {
+        console.error('Error al generar PDF:', err);
+        alert('Ocurrio un error. Revisa la consola e intenta de nuevo.');
+    } finally {
+        document.getElementById('loading-screen').style.display = 'none';
+    }
+}
+</script>
 </body>
 </html>
