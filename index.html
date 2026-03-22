@@ -464,7 +464,7 @@
 </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 /* ── UTILIDADES ── */
 function fileToDataURL(file) {
     return new Promise(resolve => {
@@ -576,15 +576,19 @@ async function generarTodo() {
         const destClean = hotel.split(",")[0].trim().replace(/\s+/g, "_");
         pdf.save("Cotizacion_LUMO_Travels_" + destClean + ".pdf");
 
-        const msgWA = "Hola! Te comparto la propuesta formal de *LUMO Travels* para tu viaje.\n\n Destino: *" + hotel + "*\n Fechas: " + fechas + "\n Inversion: *" + precio + "*\n\nEn el PDF adjunto encuentras el detalle completo y fotos.\nSomos una agencia legalmente registrada (*RNT 278559*).\n\n Te parece bien? Si me das el OK verificamos disponibilidad ahora mismo.";
+        const msgWA = "Hola! Te comparto la propuesta formal de *LUMO Travels* para tu viaje.\n\n✈️ Destino: *" + hotel + "*\n📅 Fechas: " + fechas + "\n💰 Inversión: *" + precio + "*\n\nEn el PDF adjunto encuentras el detalle completo y fotos.\nSomos una agencia legalmente registrada (*RNT 278559*).\n\n¿Te parece bien? Si me das el OK verificamos disponibilidad ahora mismo.";
         try { await navigator.clipboard.writeText(msgWA); } catch(_) {}
 
     } catch(err) {
         console.error("Error PDF:", err);
-        alert("Ocurrio un error al generar el PDF. Intenta de nuevo.");
+        alert("Ocurrió un error al generar el PDF. Intenta de nuevo.\n\n" + err.message);
     } finally {
         document.getElementById("loading-screen").style.display = "none";
     }
 }
 
-/* ── LISTENER — inmune a inye
+/* ── EVENT LISTENER ── */
+document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("btn-generar").addEventListener("click", generarTodo);
+});
+</script>
