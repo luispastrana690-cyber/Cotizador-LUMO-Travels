@@ -14,13 +14,13 @@
         }
     </script>
     <style>
-        body { position: relative; }
+        body { position: relative; overflow-x: hidden; }
 
-        /* Pantalla de Carga Profesional */
+        /* Pantalla de Carga */
         #loading-screen {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: rgba(255, 255, 255, 0.95);
+            background-color: rgba(255, 255, 255, 0.98);
             z-index: 99999;
             display: none;
             flex-direction: column;
@@ -28,15 +28,14 @@
             align-items: center;
         }
 
-        /* El contenedor del PDF ahora se ubica perfecto, protegido por la pantalla de carga */
+        /* EL CONTENEDOR MAESTRO: Sin inventos raros, directo en la coordenada 0,0 */
         #pdf-wrapper {
             position: absolute;
             top: 0;
             left: 0;
-            width: 794px; /* Ancho exacto A4 */
+            width: 794px; /* Ancho universal A4 */
             background-color: white;
-            z-index: 99990; /* Por encima de todo, pero debajo del loading screen */
-            display: none;
+            display: none; /* Se activa solo al generar */
         }
 
         #pdf-template {
@@ -45,12 +44,13 @@
             color: #2D2D2D;
             background: white;
             padding: 0; margin: 0;
+            box-sizing: border-box;
         }
 
-        /* DISEÑO DE LA PROPUESTA (Proporciones perfectas) */
+        /* DISEÑO APROBADO (Textos elegantes y fotos controladas) */
         .pdf-header { background-color: #E6FF00; padding: 25px 20px; text-align: center; }
         .legal-banner { background-color: #f3f4f6; padding: 8px; text-align: center; border-bottom: 4px solid #E6FF00; }
-        .img-box { width: 100%; height: 320px; background: #eee; overflow: hidden; }
+        .img-box { width: 100%; height: 300px; background: #eee; overflow: hidden; }
         .img-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .pdf-content { padding: 30px 45px; }
 
@@ -70,16 +70,16 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-4 md:p-8">
 
-    <div id="loading-screen">
+    <div id="loading-screen" data-html2canvas-ignore="true">
         <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-yellow-400 mb-4"></div>
         <h2 class="text-2xl font-bold text-dark">Armando tu propuesta...</h2>
-        <p class="text-gray-500 mt-2">No cierres esta ventana 🍋☀️</p>
+        <p class="text-gray-500 mt-2">Creando PDF perfecto 🍋☀️</p>
     </div>
 
-    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8" data-html2canvas-ignore="true">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-dark mb-2">🍋 LUMO Travels</h1>
-            <p class="text-gray-500">Generador de Propuestas (V2.0 - Motor Pro)</p>
+            <p class="text-gray-500">Generador Oficial (Solución Definitiva)</p>
         </div>
 
         <form id="lumo-form" class="space-y-6">
@@ -121,7 +121,7 @@
             </div>
 
             <button type="button" onclick="generarTodo()" class="w-full bg-lumo text-dark font-bold text-lg py-3 rounded-lg shadow-md hover:bg-yellow-400 transition">
-                🚀 Generar Propuesta Final
+                🚀 Generar PDF
             </button>
         </form>
     </div>
@@ -190,13 +190,10 @@
                 return;
             }
 
-            // Subimos la pantalla arriba del todo para que la cámara no corte nada
-            window.scrollTo(0, 0);
-
-            // Activamos la pantalla de carga para que el cliente no vea el proceso
+            // 1. Mostrar pantalla de carga
             document.getElementById('loading-screen').style.display = 'flex';
             
-            // Llenamos datos
+            // 2. Llenar los datos
             document.getElementById('pdf-hotel').innerText = hotel;
             document.getElementById('pdf-fechas').innerText = "📅 " + fechas;
             document.getElementById('pdf-precio').innerText = precio;
@@ -217,31 +214,37 @@
             await cargarImagen(document.getElementById('foto1'), 'pdf-img1');
             await cargarImagen(document.getElementById('foto2'), 'pdf-img2');
 
-            // Mostramos el PDF de forma real (pero está tapado por el loading screen)
+            // 3. Mostramos la plantilla en 0,0 real (El loading screen tapa todo lo demás)
             const elementoPDF = document.getElementById('pdf-wrapper');
             elementoPDF.style.display = 'block';
+            window.scrollTo(0, 0);
 
-            // Le damos 500ms al navegador para que cargue las fotos bien antes de tomar el PDF
+            // 4. Pequeña pausa para que el navegador procese las imágenes
             setTimeout(() => {
                 const opcionesPDF = {
                     margin: 0,
                     filename: `Propuesta_LUMO_${hotel.replace(/\s+/g, '_')}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+                    html2canvas: { 
+                        scale: 2, 
+                        useCORS: true, 
+                        windowWidth: 794,
+                        scrollY: 0,
+                        scrollX: 0
+                    },
                     jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
                 };
 
                 html2pdf().set(opcionesPDF).from(elementoPDF).save().then(() => {
-                    // Escondemos todo otra vez
+                    // Escondemos todo al terminar
                     elementoPDF.style.display = 'none';
                     document.getElementById('loading-screen').style.display = 'none';
 
                     const textoWhatsApp = `¡Hola! 🏝️ Aquí tienes la propuesta formal de *LUMO Travels* para tu viaje. 🍋☀️\n\n📌 *DESTINO:* ${hotel}\n📅 *FECHAS:* ${fechas}\n💰 *INVERSIÓN:* ${precio}\n\nEn el PDF adjunto verás las fotos y el detalle profesional de lo que te incluimos. También incluimos nuestra información legal (*RNT 278559*) para que reserves con total seguridad. 🛡️✅\n\n*¿Qué te parece la propuesta? Si me das el OK, procedemos a verificar disponibilidad de vuelos ahora mismo.* ✈️`;
                     navigator.clipboard.writeText(textoWhatsApp);
                     
-                    alert("✅ ¡PDF GENERADO PERFECTO! El documento ya se descargó y el mensaje se copió.");
                 });
-            }, 500); // 500 milisegundos de espera mágica
+            }, 500); // 500ms de seguro
         }
     </script>
 </body>
