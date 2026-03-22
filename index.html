@@ -9,21 +9,17 @@
     <script>
         tailwind.config = {
             theme: {
-                extend: {
-                    colors: { lumo: '#E6FF00', dark: '#2D2D2D' }
-                }
+                extend: { colors: { lumo: '#E6FF00', dark: '#2D2D2D' } }
             }
         }
     </script>
     <style>
-        /* Estilos específicos para que el PDF se vea como un celular (Vertical) */
         #pdf-template {
             width: 450px; 
             background: white;
             font-family: 'Arial', sans-serif;
-            position: absolute;
-            left: -9999px; /* Oculto en la web, pero visible para el PDF */
-            top: 0;
+            display: none; /* Ahora lo ocultamos de forma segura */
+            margin: 0 auto;
         }
         .pdf-header { background-color: #E6FF00; padding: 30px 20px; text-align: center; }
         .pdf-img { width: 100%; height: 250px; object-fit: cover; }
@@ -138,7 +134,6 @@
         }
 
         async function generarTodo() {
-            // 1. Obtener datos del form
             const hotel = document.getElementById('hotel').value;
             const fechas = document.getElementById('fechas').value;
             const precio = document.getElementById('precio').value;
@@ -150,13 +145,11 @@
                 return;
             }
 
-            // 2. Llenar plantilla PDF
             document.getElementById('pdf-hotel').innerText = hotel;
             document.getElementById('pdf-fechas').innerText = "📅 " + fechas;
             document.getElementById('pdf-precio').innerText = precio;
             document.getElementById('pdf-legales').innerText = legales;
 
-            // Procesar lista de inclusiones
             const ul = document.getElementById('pdf-inclusiones');
             ul.innerHTML = '';
             inclusionesText.split('\n').forEach(linea => {
@@ -167,29 +160,29 @@
                 }
             });
 
-            // Cargar imágenes
             await cargarImagen(document.getElementById('foto1'), 'pdf-img1');
             await cargarImagen(document.getElementById('foto2'), 'pdf-img2');
 
-            // 3. Generar y descargar PDF (Opciones ajustadas para celular)
+            // --- LA MAGIA ESTÁ AQUÍ ---
             const elementoPDF = document.getElementById('pdf-template');
+            elementoPDF.style.display = 'block'; // Lo mostramos para la foto
+
             const opcionesPDF = {
                 margin: 0,
                 filename: `Propuesta_LUMO_${hotel.replace(/\s+/g, '_')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'px', format: [450, 900], orientation: 'portrait' } // Formato vertical tipo celular
+                jsPDF: { unit: 'px', format: [450, 900], orientation: 'portrait' }
             };
 
-            html2pdf().set(opcionesPDF).from(elementoPDF).save();
-
-            // 4. Copiar texto de WhatsApp al portapapeles
-            const textoWhatsApp = `¡Hola! 🏝️ Aquí tienes la propuesta formal de *LUMO Travels* para tu viaje. 🍋☀️\n\n📌 *DESTINO:* ${hotel}\n📅 *FECHAS:* ${fechas}\n💰 *INVERSIÓN:* ${precio}\n\nEn el PDF adjunto verás las fotos y el detalle de lo que te incluimos. También incluimos nuestra información legal (*RNT 278559*) para que reserves con total seguridad. 🛡️✅\n\n*¿Qué te parece la propuesta? Si me das el OK, procedemos a verificar disponibilidad de vuelos ahora mismo.* ✈️`;
-            
-            navigator.clipboard.writeText(textoWhatsApp).then(() => {
-                alert("✅ ¡Éxito socio! El PDF se está descargando y el texto para WhatsApp ya se copió en tu portapapeles. Solo ve al chat y dale 'Pegar'.");
-            }).catch(err => {
-                alert("El PDF se descargó, pero no pude copiar el texto (tal vez el navegador no dio permiso).");
+            html2pdf().set(opcionesPDF).from(elementoPDF).save().then(() => {
+                elementoPDF.style.display = 'none'; // Lo volvemos a ocultar
+                
+                const textoWhatsApp = `¡Hola! 🏝️ Aquí tienes la propuesta formal de *LUMO Travels* para tu viaje. 🍋☀️\n\n📌 *DESTINO:* ${hotel}\n📅 *FECHAS:* ${fechas}\n💰 *INVERSIÓN:* ${precio}\n\nEn el PDF adjunto verás las fotos y el detalle de lo que te incluimos. También incluimos nuestra información legal (*RNT 278559*) para que reserves con total seguridad. 🛡️✅\n\n*¿Qué te parece la propuesta? Si me das el OK, procedemos a verificar disponibilidad de vuelos ahora mismo.* ✈️`;
+                
+                navigator.clipboard.writeText(textoWhatsApp).then(() => {
+                    alert("✅ ¡Éxito socio! El PDF se descargó con diseño y el texto ya se copió.");
+                });
             });
         }
     </script>
