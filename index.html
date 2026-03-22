@@ -14,12 +14,29 @@
         }
     </script>
     <style>
-        /* La plantilla oculta de forma segura sin romper las coordenadas X/Y */
+        body { position: relative; }
+
+        /* Pantalla de Carga Profesional */
+        #loading-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(255, 255, 255, 0.95);
+            z-index: 99999;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* El contenedor del PDF ahora se ubica perfecto, protegido por la pantalla de carga */
         #pdf-wrapper {
-            display: none; /* Oculto por defecto */
-            width: 794px; /* Ancho exacto de A4 */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 794px; /* Ancho exacto A4 */
             background-color: white;
-            box-sizing: border-box;
+            z-index: 99990; /* Por encima de todo, pero debajo del loading screen */
+            display: none;
         }
 
         #pdf-template {
@@ -27,42 +44,16 @@
             font-family: 'Arial', sans-serif;
             color: #2D2D2D;
             background: white;
-            padding: 0;
-            margin: 0;
+            padding: 0; margin: 0;
         }
 
-        .pdf-header {
-            background-color: #E6FF00;
-            padding: 25px 20px;
-            text-align: center;
-        }
+        /* DISEÑO DE LA PROPUESTA (Proporciones perfectas) */
+        .pdf-header { background-color: #E6FF00; padding: 25px 20px; text-align: center; }
+        .legal-banner { background-color: #f3f4f6; padding: 8px; text-align: center; border-bottom: 4px solid #E6FF00; }
+        .img-box { width: 100%; height: 320px; background: #eee; overflow: hidden; }
+        .img-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pdf-content { padding: 30px 45px; }
 
-        .legal-banner {
-            background-color: #f3f4f6;
-            padding: 8px;
-            text-align: center;
-            border-bottom: 4px solid #E6FF00;
-        }
-
-        .img-box {
-            width: 100%;
-            height: 300px;
-            background: #eee;
-            overflow: hidden;
-        }
-
-        .img-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; 
-            display: block;
-        }
-
-        .pdf-content {
-            padding: 30px 45px;
-        }
-
-        /* Diseño de inclusiones LUMO ajustado */
         .inclusion-item {
             background: white;
             border-left: 5px solid #E6FF00;
@@ -72,18 +63,23 @@
             font-size: 14px;
             color: #333;
             box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-            display: flex;
-            align-items: center;
+            display: flex; align-items: center;
             border: 1px solid #f9f9f9;
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 md:p-8 relative">
+<body class="bg-gray-100 min-h-screen p-4 md:p-8">
 
-    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8 relative z-10">
+    <div id="loading-screen">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-yellow-400 mb-4"></div>
+        <h2 class="text-2xl font-bold text-dark">Armando tu propuesta...</h2>
+        <p class="text-gray-500 mt-2">No cierres esta ventana 🍋☀️</p>
+    </div>
+
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-dark mb-2">🍋 LUMO Travels</h1>
-            <p class="text-gray-500">Generador de Propuestas (V1.5 - Alineación Perfecta)</p>
+            <p class="text-gray-500">Generador de Propuestas (V2.0 - Motor Pro)</p>
         </div>
 
         <form id="lumo-form" class="space-y-6">
@@ -110,7 +106,7 @@
 
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-1">Términos Legales</label>
-                <textarea id="legales" rows="3" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none text-sm" placeholder="Tarifa sujeta a disponibilidad. No incluye tarjeta de entrada a la isla."></textarea>
+                <textarea id="legales" rows="3" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none text-sm" placeholder="Tarifa sujeta a disponibilidad."></textarea>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -132,47 +128,34 @@
 
     <div id="pdf-wrapper">
         <div id="pdf-template">
-            
             <div class="pdf-header">
                 <h1 style="font-size: 32px; font-weight: 900; margin: 0; color: #2D2D2D;">LUMO Travels</h1>
                 <p style="margin: 4px 0 0 0; font-size: 14px; color: #444; font-weight: bold;">Tu próximo destino comienza aquí 🍋☀️</p>
             </div>
-            
             <div class="legal-banner">
                 <p style="margin: 0; font-size: 10px; font-weight: bold; color: #555;">AGENCIA LEGALMENTE CONSTITUIDA | RNT: 278559</p>
             </div>
-
-            <div class="img-box">
-                <img id="pdf-img1" src="" style="display: none;">
-            </div>
-
+            <div class="img-box"><img id="pdf-img1" src="" style="display: none;"></div>
             <div class="pdf-content">
                 <h2 id="pdf-hotel" style="font-size: 26px; color: #2D2D2D; margin: 0 0 8px 0; font-weight: 900;">Destino</h2>
                 <p id="pdf-fechas" style="font-size: 15px; color: #666; font-weight: bold; margin: 0 0 25px 0;">📅 Fechas</p>
-
                 <div style="background: #fafafa; padding: 25px; border-radius: 8px; border: 1px dashed #e5e7eb;">
                     <h3 style="font-size: 18px; margin: 0 0 15px 0; color: #2D2D2D; font-weight: 900;">✨ Tu paquete incluye:</h3>
-                    <div id="pdf-inclusiones">
-                        </div>
+                    <div id="pdf-inclusiones"></div>
                 </div>
             </div>
 
-            <div class="img-box" style="margin-top: 10px;">
-                <img id="pdf-img2" src="" style="display: none;">
-            </div>
-
+            <div class="img-box" style="margin-top: 10px;"><img id="pdf-img2" src="" style="display: none;"></div>
             <div class="pdf-content">
                 <div style="background: #E6FF00; padding: 25px; text-align: center; border-radius: 12px; margin-bottom: 25px;">
                     <p style="margin: 0; font-size: 13px; color: #333; font-weight: bold; letter-spacing: 1px;">INVERSIÓN TOTAL DE TU VIAJE</p>
                     <p id="pdf-precio" style="margin: 10px 0 0 0; font-size: 32px; font-weight: 900; color: #000;"></p>
                 </div>
-                
                 <div style="background: #f8f9fa; padding: 20px; border-left: 4px solid #ccc;">
                     <h4 style="font-size: 14px; font-weight: bold; margin: 0 0 8px 0; color: #2D2D2D;">⚠️ Términos y Condiciones Legales:</h4>
                     <p id="pdf-legales" style="font-size: 11px; color: #555; line-height: 1.5; margin: 0; text-align: justify;"></p>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -207,6 +190,13 @@
                 return;
             }
 
+            // Subimos la pantalla arriba del todo para que la cámara no corte nada
+            window.scrollTo(0, 0);
+
+            // Activamos la pantalla de carga para que el cliente no vea el proceso
+            document.getElementById('loading-screen').style.display = 'flex';
+            
+            // Llenamos datos
             document.getElementById('pdf-hotel').innerText = hotel;
             document.getElementById('pdf-fechas').innerText = "📅 " + fechas;
             document.getElementById('pdf-precio').innerText = precio;
@@ -227,41 +217,31 @@
             await cargarImagen(document.getElementById('foto1'), 'pdf-img1');
             await cargarImagen(document.getElementById('foto2'), 'pdf-img2');
 
-            // --- EL TRUCO DEFINITIVO DE ALINEACIÓN ---
+            // Mostramos el PDF de forma real (pero está tapado por el loading screen)
             const elementoPDF = document.getElementById('pdf-wrapper');
-            
-            // Ponemos la plantilla en 0,0 pero detrás de la página web para que la cámara no se confunda
             elementoPDF.style.display = 'block';
-            elementoPDF.style.position = 'absolute';
-            elementoPDF.style.top = '0';
-            elementoPDF.style.left = '0';
-            elementoPDF.style.zIndex = '-1000';
 
-            const opcionesPDF = {
-                margin: 0,
-                filename: `Propuesta_LUMO_${hotel.replace(/\s+/g, '_')}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2, 
-                    useCORS: true,
-                    x: 0, 
-                    y: 0,
-                    scrollY: 0, 
-                    scrollX: 0,
-                    windowWidth: 794 
-                },
-                // Forzamos pixeles en lugar de milímetros para un mapeo 1:1 exacto
-                jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' } 
-            };
+            // Le damos 500ms al navegador para que cargue las fotos bien antes de tomar el PDF
+            setTimeout(() => {
+                const opcionesPDF = {
+                    margin: 0,
+                    filename: `Propuesta_LUMO_${hotel.replace(/\s+/g, '_')}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+                    jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
+                };
 
-            html2pdf().set(opcionesPDF).from(elementoPDF).save().then(() => {
-                // Volvemos a esconder la plantilla
-                elementoPDF.style.display = 'none';
+                html2pdf().set(opcionesPDF).from(elementoPDF).save().then(() => {
+                    // Escondemos todo otra vez
+                    elementoPDF.style.display = 'none';
+                    document.getElementById('loading-screen').style.display = 'none';
 
-                const textoWhatsApp = `¡Hola! 🏝️ Aquí tienes la propuesta formal de *LUMO Travels* para tu viaje. 🍋☀️\n\n📌 *DESTINO:* ${hotel}\n📅 *FECHAS:* ${fechas}\n💰 *INVERSIÓN:* ${precio}\n\nEn el PDF adjunto verás las fotos y el detalle profesional de lo que te incluimos. También incluimos nuestra información legal (*RNT 278559*) para que reserves con total seguridad. 🛡️✅\n\n*¿Qué te parece la propuesta? Si me das el OK, procedemos a verificar disponibilidad de vuelos ahora mismo.* ✈️`;
-                navigator.clipboard.writeText(textoWhatsApp);
-                alert("✅ ¡Magia pura, socio! Documento centrado y listo.");
-            });
+                    const textoWhatsApp = `¡Hola! 🏝️ Aquí tienes la propuesta formal de *LUMO Travels* para tu viaje. 🍋☀️\n\n📌 *DESTINO:* ${hotel}\n📅 *FECHAS:* ${fechas}\n💰 *INVERSIÓN:* ${precio}\n\nEn el PDF adjunto verás las fotos y el detalle profesional de lo que te incluimos. También incluimos nuestra información legal (*RNT 278559*) para que reserves con total seguridad. 🛡️✅\n\n*¿Qué te parece la propuesta? Si me das el OK, procedemos a verificar disponibilidad de vuelos ahora mismo.* ✈️`;
+                    navigator.clipboard.writeText(textoWhatsApp);
+                    
+                    alert("✅ ¡PDF GENERADO PERFECTO! El documento ya se descargó y el mensaje se copió.");
+                });
+            }, 500); // 500 milisegundos de espera mágica
         }
     </script>
 </body>
