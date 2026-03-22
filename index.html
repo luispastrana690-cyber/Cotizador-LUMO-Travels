@@ -1,1 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Propuestas | LUMO Travels</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { lumo: '#E6FF00', dark: '#2D2D2D' }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilos específicos para que el PDF se vea como un celular (Vertical) */
+        #pdf-template {
+            width: 450px; 
+            background: white;
+            font-family: 'Arial', sans-serif;
+            position: absolute;
+            left: -9999px; /* Oculto en la web, pero visible para el PDF */
+            top: 0;
+        }
+        .pdf-header { background-color: #E6FF00; padding: 30px 20px; text-align: center; }
+        .pdf-img { width: 100%; height: 250px; object-fit: cover; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8">
 
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-dark mb-2">🍋 LUMO Travels</h1>
+            <p class="text-gray-500">Generador Automático de Propuestas</p>
+        </div>
+
+        <form id="lumo-form" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Hotel / Destino</label>
+                    <input type="text" id="hotel" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: Hotel Occidental Caribe" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Fechas de Viaje</label>
+                    <input type="text" id="fechas" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: 10 al 13 de Junio 2026" required>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Precio Total</label>
+                <input type="text" id="precio" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Ej: $2.220.000 (Valor por pareja)" required>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">¿Qué incluye? (Un ítem por línea)</label>
+                <textarea id="inclusiones" rows="4" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none" placeholder="Vuelos desde Medellín&#10;Traslados privados&#10;Desayunos" required></textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Textos Legales / Notas</label>
+                <textarea id="legales" rows="2" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-lumo outline-none text-sm" placeholder="Tarifa sujeta a disponibilidad..."></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Foto Principal (Fachada/Piscina)</label>
+                    <input type="file" id="foto1" accept="image/*" class="w-full text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Foto Secundaria (Habitación/Playa)</label>
+                    <input type="file" id="foto2" accept="image/*" class="w-full text-sm">
+                </div>
+            </div>
+
+            <button type="button" onclick="generarTodo()" class="w-full bg-lumo text-dark font-bold text-lg py-3 rounded-lg shadow-md hover:bg-yellow-400 transition">
+                🚀 Generar PDF y Copiar Mensaje
+            </button>
+        </form>
+    </div>
+
+    <div id="pdf-template">
+        <div class="pdf-header">
+            <h1 style="font-size: 28px; font-weight: bold; margin: 0; color: #2D2D2D;">LUMO Travels</h1>
+            <p style="margin: 5px 0 0 0; font-size: 14px; color: #555;">Tu próximo destino comienza aquí 🍋☀️</p>
+        </div>
+        
+        <div style="text-align: center; padding: 10px; background: #f3f4f6; border-bottom: 2px solid #E6FF00;">
+            <p style="margin: 0; font-size: 11px; font-weight: bold; color: #333;">AGENCIA LEGALMENTE CONSTITUIDA | RNT: 278559</p>
+            <p style="margin: 2px 0 0 0; font-size: 9px; color: #666;">Consulta nuestra legalidad en el portal oficial de Fontur.</p>
+        </div>
+
+        <img id="pdf-img1" class="pdf-img" src="" style="display: none;">
+
+        <div style="padding: 25px;">
+            <h2 id="pdf-hotel" style="font-size: 24px; color: #2D2D2D; margin: 0 0 5px 0;">Destino</h2>
+            <p id="pdf-fechas" style="font-size: 14px; color: #666; font-weight: bold; margin: 0 0 20px 0;">Fechas</p>
+
+            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="font-size: 16px; margin: 0 0 10px 0; color: #2D2D2D;">✅ Tu paquete incluye:</h3>
+                <ul id="pdf-inclusiones" style="margin: 0; padding-left: 20px; font-size: 13px; color: #444; line-height: 1.6;">
+                </ul>
+            </div>
+        </div>
+
+        <img id="pdf-img2" class="pdf-img" src="" style="display: none;">
+
+        <div style="padding: 25px;">
+            <div style="background: #E6FF00; padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 14px; color: #333;">VALOR TOTAL INVERSIÓN</p>
+                <p id="pdf-precio" style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; color: #000;"></p>
+            </div>
+            
+            <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">⚠️ Condiciones:</p>
+            <p id="pdf-legales" style="font-size: 10px; color: #666; line-height: 1.4; margin: 0;"></p>
+        </div>
+    </div>
+
+    <script>
+        function cargarImagen(input, imgElementId) {
+            return new Promise((resolve) => {
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.getElementById(imgElementId);
+                        img.src = e.target.result;
+                        img.style.display = 'block';
+                        resolve();
+                    }
+                    reader.readAsDataURL(input.files[0]);
+                } else {
+                    document.getElementById(imgElementId).style.display = 'none';
+                    resolve();
+                }
+            });
+        }
+
+        async function generarTodo() {
+            // 1. Obtener datos del form
+            const hotel = document.getElementById('hotel').value;
+            const fechas = document.getElementById('fechas').value;
+            const precio = document.getElementById('precio').value;
+            const inclusionesText = document.getElementById('inclusiones').value;
+            const legales = document.getElementById('legales').value;
+
+            if(!hotel || !fechas || !precio || !inclusionesText) {
+                alert("Socio, por favor llena los campos principales (Hotel, Fechas, Precio e Inclusiones).");
+                return;
+            }
+
+            // 2. Llenar plantilla PDF
+            document.getElementById('pdf-hotel').innerText = hotel;
+            document.getElementById('pdf-fechas').innerText = "📅 " + fechas;
+            document.getElementById('pdf-precio').innerText = precio;
+            document.getElementById('pdf-legales').innerText = legales;
+
+            // Procesar lista de inclusiones
+            const ul = document.getElementById('pdf-inclusiones');
+            ul.innerHTML = '';
+            inclusionesText.split('\n').forEach(linea => {
+                if(linea.trim() !== '') {
+                    const li = document.createElement('li');
+                    li.innerText = linea;
+                    ul.appendChild(li);
+                }
+            });
+
+            // Cargar imágenes
+            await cargarImagen(document.getElementById('foto1'), 'pdf-img1');
+            await cargarImagen(document.getElementById('foto2'), 'pdf-img2');
+
+            // 3. Generar y descargar PDF (Opciones ajustadas para celular)
+            const elementoPDF = document.getElementById('pdf-template');
+            const opcionesPDF = {
+                margin: 0,
+                filename: `Propuesta_LUMO_${hotel.replace(/\s+/g, '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'px', format: [450, 900], orientation: 'portrait' } // Formato vertical tipo celular
+            };
+
+            html2pdf().set(opcionesPDF).from(elementoPDF).save();
+
+            // 4. Copiar texto de WhatsApp al portapapeles
+            const textoWhatsApp = `¡Hola! 🏝️ Aquí tienes la propuesta formal de *LUMO Travels* para tu viaje. 🍋☀️\n\n📌 *DESTINO:* ${hotel}\n📅 *FECHAS:* ${fechas}\n💰 *INVERSIÓN:* ${precio}\n\nEn el PDF adjunto verás las fotos y el detalle de lo que te incluimos. También incluimos nuestra información legal (*RNT 278559*) para que reserves con total seguridad. 🛡️✅\n\n*¿Qué te parece la propuesta? Si me das el OK, procedemos a verificar disponibilidad de vuelos ahora mismo.* ✈️`;
+            
+            navigator.clipboard.writeText(textoWhatsApp).then(() => {
+                alert("✅ ¡Éxito socio! El PDF se está descargando y el texto para WhatsApp ya se copió en tu portapapeles. Solo ve al chat y dale 'Pegar'.");
+            }).catch(err => {
+                alert("El PDF se descargó, pero no pude copiar el texto (tal vez el navegador no dio permiso).");
+            });
+        }
+    </script>
+</body>
+</html>
