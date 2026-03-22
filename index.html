@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Cache busting: 20260322041351 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Generador de Propuestas | LUMO Travels</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -448,7 +452,7 @@
             </div>
             <div class="pf-contact">
                 <span class="pf-contact-item"><b>www.tulumo.com</b></span>
-                <span class="pf-contact-item">info@tulumo.com</span>
+                <span class="pf-contact-item"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4c25222a230c383920392123622f2321">[email&#160;protected]</a></span>
             </div>
         </div>
         <div class="pf-row2">
@@ -460,7 +464,7 @@
 </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ── UTILIDADES ── */
 function fileToDataURL(file) {
     return new Promise(resolve => {
@@ -583,11 +587,4 @@ async function generarTodo() {
     }
 }
 
-/* ── LISTENER — inmune a inyecciones externas ── */
-document.addEventListener("DOMContentLoaded", function() {
-    var btn = document.getElementById("btn-generar");
-    if (btn) btn.addEventListener("click", generarTodo);
-});
-</script>
-</body>
-</html>
+/* ── LISTENER — inmune a inye
