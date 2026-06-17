@@ -81,8 +81,8 @@ body{font-family:"Poppins",sans-serif;background:#EEFBEE;min-height:100vh;}
 
 /* Foto destino */
 .pdf-img-wrap{width:794px;height:240px;overflow:hidden;display:block;position:relative;background:#E0E0E0;line-height:0;}
-.pdf-img-wrap img.photo{position:absolute;top:0;left:0;width:794px;height:240px;object-fit:cover;display:none;}
-.pdf-img-ph{position:absolute;top:0;left:0;width:794px;height:240px;background:#EEEEEE;display:table;}
+.pdf-img-wrap img.photo{width:794px;height:240px;object-fit:cover;object-position:center;display:none;}
+.pdf-img-ph{position:absolute;top:0;left:0;width:794px;height:240px;background:#EEEEEE;display:table;z-index:1;}
 .pdf-img-ph span{display:table-cell;vertical-align:middle;text-align:center;color:#BDBDBD;font-size:13px;font-family:'Montserrat',Arial,sans-serif;}
 .pdf-badge{position:absolute;bottom:12px;left:40px;background:#FFEB3B;color:#212121;font-size:11px;font-weight:700;padding:5px 14px;border-radius:20px;font-family:'Montserrat',Arial,sans-serif;letter-spacing:0.5px;z-index:2;}
 
@@ -113,9 +113,10 @@ body{font-family:"Poppins",sans-serif;background:#EEFBEE;min-height:100vh;}
 .pc-vigencia{display:inline-block;margin-top:9px;background:#212121;color:#FFEB3B;font-size:10px;font-weight:700;padding:4px 12px;border-radius:14px;font-family:'Montserrat',Arial,sans-serif;letter-spacing:0.8px;}
 
 /* Segunda foto (más pequeña que la principal para no saturar) */
-.pdf-img-wrap-2{height:200px !important;}
-.pdf-img-wrap-2 img.photo,.pdf-img-wrap-2 .pdf-img-ph{height:200px !important;}
-.pdf-badge-2{background:#4CAF50 !important;color:white !important;}
+.pdf-img-wrap-2{height:200px;}
+.pdf-img-wrap-2 img.photo{height:200px;}
+.pdf-img-wrap-2 .pdf-img-ph{height:200px;}
+.pdf-badge-2{background:#4CAF50;color:white;}
 
 /* Forma de pago (NUEVO) */
 .pc-pago-wrap{padding:0 40px 18px 40px;display:block;width:794px;}
@@ -593,25 +594,10 @@ function fileToDataURL(file) {
   });
 }
 
-function cargarYCentrar(img, dataURL, ph, height) {
+function cargarYCentrar(img, dataURL, ph) {
   return new Promise(resolve => {
     img.onload = () => {
-      const cW = 794, cH = height || 240;
-      const ratio = img.naturalWidth / img.naturalHeight;
-      const contRatio = cW / cH;
-      if (ratio > contRatio) {
-        const renderW = cH * ratio;
-        img.style.width = renderW + "px";
-        img.style.height = cH + "px";
-        img.style.top = "0px";
-        img.style.left = -((renderW - cW) / 2) + "px";
-      } else {
-        const renderH = cW / ratio;
-        img.style.width = cW + "px";
-        img.style.height = renderH + "px";
-        img.style.top = -((renderH - cH) / 2) + "px";
-        img.style.left = "0px";
-      }
+      // El centrado lo maneja object-fit:cover + object-position:center del CSS
       img.style.display = "block";
       if (ph) ph.style.display = "none";
       resolve();
@@ -690,17 +676,17 @@ async function prepararTemplate(data) {
 
   // Fotos (principal y secundaria)
   const promises = [];
-  async function loadPhoto(fileInput, imgId, phId, height) {
+  async function loadPhoto(fileInput, imgId, phId) {
     if (!fileInput?.files?.[0]) return;
     const url = await fileToDataURL(fileInput.files[0]);
     if (!url) return;
     promises.push(cargarYCentrar(
       document.getElementById(imgId), url,
-      document.getElementById(phId), height
+      document.getElementById(phId)
     ));
   }
-  await loadPhoto(data.foto1, "pdf-img1", "ph1", 240);
-  await loadPhoto(data.foto2, "pdf-img2", "ph2", 200);
+  await loadPhoto(data.foto1, "pdf-img1", "ph1");
+  await loadPhoto(data.foto2, "pdf-img2", "ph2");
   await Promise.all(promises);
   await new Promise(r => setTimeout(r, 400));
 }
