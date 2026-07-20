@@ -276,7 +276,65 @@ body{font-family:"Poppins",sans-serif;background:#EEFBEE;min-height:100vh;}
         <span class="hint">Usa el botón <b>Cargar términos legales</b> arriba para autollenar.</span>
       </div>
     </div>
-
+<!-- SECCIÓN CRM: DATOS DEL CLIENTE Y GANANCIA -->
+    <div class="form-section">
+      <span class="section-label">Datos del cliente y CRM</span>
+      <div class="form-row">
+        <div class="form-group">
+          <label>WhatsApp del cliente</label>
+          <input type="text" id="crm-whatsapp-cliente" placeholder="Ej: +57 315 123 4567">
+          <span class="hint">Para follow-up desde el CRM.</span>
+        </div>
+        <div class="form-group">
+          <label>Ciudad de origen</label>
+          <input type="text" id="crm-ciudad-origen" list="crm-ciudades" placeholder="Ej: Medellín">
+          <datalist id="crm-ciudades">
+            <option value="Medellín">
+            <option value="Bogotá">
+            <option value="Cali">
+            <option value="Barranquilla">
+            <option value="Bucaramanga">
+            <option value="Otra">
+          </datalist>
+        </div>
+      </div>
+      <div class="form-row-3" style="margin-top:10px;">
+        <div class="form-group">
+          <label># Adultos</label>
+          <input type="number" id="crm-adultos" min="0" step="1" placeholder="Ej: 2">
+        </div>
+        <div class="form-group">
+          <label># Niños</label>
+          <input type="number" id="crm-ninos" min="0" step="1" placeholder="Ej: 0">
+        </div>
+        <div class="form-group">
+          <label>Canal de entrada</label>
+          <input type="text" id="crm-canal" list="crm-canales" placeholder="SEO orgánico">
+          <datalist id="crm-canales">
+            <option value="SEO orgánico">
+            <option value="Directo web">
+            <option value="Instagram">
+            <option value="Facebook">
+            <option value="Referido">
+            <option value="Meta Ads">
+            <option value="Google Ads">
+            <option value="WhatsApp directo">
+          </datalist>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:10px;">
+        <div class="form-group">
+          <label>Comisión LUMO (COP)</label>
+          <input type="text" id="crm-comision-lumo" placeholder="Ej: 500000" inputmode="numeric">
+          <span class="hint">Ganancia bruta que le queda a LUMO en esta cotización. Solo números. El % se calcula solo.</span>
+        </div>
+        <div class="form-group">
+          <label>Notas internas (opcional)</label>
+          <input type="text" id="crm-notas" placeholder="Ej: Pide frente al mar, ya viajó con nosotros">
+          <span class="hint">Solo se guarda en el CRM, no sale en el PDF.</span>
+        </div>
+      </div>
+    </div>
     <!-- SECCIÓN 6: IMÁGENES -->
     <div class="form-section" style="margin-bottom:22px;">
       <span class="section-label">Imágenes del destino</span>
@@ -884,6 +942,126 @@ document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("btn-reset").addEventListener("click", resetState);
   document.getElementById("btn-generar").addEventListener("click", generarTodo);
 });
+</script>
+<script>
+(function () {
+  "use strict";
+
+  function parseCOP(v) {
+    if (v == null) return null;
+    var s = String(v).replace(/[^0-9\-]/g, "");
+    if (!s) return null;
+    var n = Number(s);
+    return isNaN(n) ? null : n;
+  }
+
+  function val(id) {
+    var el = document.getElementById(id);
+    if (!el) return "";
+    return (el.value || "").trim();
+  }
+
+  function splitHotelDestino(raw) {
+    if (!raw) return { destino: "", hotel: "" };
+    var idx = raw.indexOf(",");
+    if (idx < 0) return { destino: raw.trim(), hotel: "" };
+    return {
+      destino: raw.slice(0, idx).trim(),
+      hotel: raw.slice(idx + 1).trim(),
+    };
+  }
+
+  function buildLead() {
+    var hd = splitHotelDestino(val("hotel"));
+    var precio = parseCOP(val("precio"));
+    var comision = parseCOP(val("crm-comision-lumo"));
+    var margenPct = precio && comision != null ? comision / precio : null;
+
+    var cotNumEl = document.getElementById("cot-num-display");
+    var cotNum = cotNumEl ? (cotNumEl.textContent || "").trim() : "";
+
+    // Notas: incluye la comisión esperada en COP para que sea visible en el CRM
+    // aunque el margen realizado (Margen COP) solo aparezca al marcar Ganado.
+    var notasUsuario = val("crm-notas");
+    var notasExtra = [];
+    if (comision != null) {
+      notasExtra.push("Comisión esperada: $" + comision.toLocaleString("es-CO"));
+    }
+    var notasFinales = [notasUsuario].concat(notasExtra).filter(Boolean).join(" · ");
+
+    return {
+      nombre: val("cliente"),
+      whatsapp: val("crm-whatsapp-cliente"),
+      ciudad_origen: val("crm-ciudad-origen"),
+      destino: hd.destino,
+      hotel: hd.hotel,
+      fechas_viaje: val("fechas"),
+      adultos: val("crm-adultos") ? Number(val("crm-adultos")) : null,
+      ninos: val("crm-ninos") ? Number(val("crm-ninos")) : null,
+      canal: val("crm-canal") || "SEO orgánico",
+      pagina_origen: "cotizador",
+      vendedor: val("asesor") || "Luis",
+      estado: "Cotizado",
+      cotizacion: precio,
+      margen_pct: margenPct,
+      cotizacion_id: cotNum,
+      vigencia: val("vigencia"),
+      fecha_entrada: (val("fecha-emision") || new Date().toISOString().slice(0, 10)),
+      fecha_ultimo: new Date().toISOString().slice(0, 10),
+      notas: notasFinales,
+    };
+  }
+
+  function toast(msg, ok) {
+    var t = document.createElement("div");
+    t.textContent = msg;
+    t.style.cssText =
+      "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);" +
+      "background:" + (ok ? "#2E7D32" : "#C62828") + ";color:white;" +
+      "padding:12px 20px;border-radius:10px;font-family:Poppins,sans-serif;" +
+      "font-size:14px;font-weight:600;z-index:999999;box-shadow:0 6px 24px rgba(0,0,0,0.2);";
+    document.body.appendChild(t);
+    setTimeout(function () { t.style.opacity = "0"; t.style.transition = "opacity 0.4s"; }, 3000);
+    setTimeout(function () { t.remove(); }, 3600);
+  }
+
+  async function sendToCRM() {
+    var lead = buildLead();
+    if (!lead.nombre || !lead.destino) {
+      console.warn("[CRM] Nombre o destino vacíos; no se envía al CRM.");
+      return;
+    }
+    try {
+      var resp = await fetch("/api/save-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lead: lead }),
+      });
+      var data = await resp.json().catch(function () { return {}; });
+      if (resp.ok && data.ok) {
+        console.log("[CRM] Lead guardado:", data);
+        toast("✓ Lead guardado en el CRM", true);
+      } else {
+        console.error("[CRM] Error al guardar:", data);
+        toast("⚠ No se pudo guardar en el CRM (ver consola)", false);
+      }
+    } catch (err) {
+      console.error("[CRM] Fallo de red:", err);
+      toast("⚠ Sin red para guardar en CRM", false);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var btn = document.getElementById("btn-generar");
+    if (!btn) {
+      console.warn("[CRM] Botón #btn-generar no encontrado.");
+      return;
+    }
+    btn.addEventListener("click", function () {
+      setTimeout(sendToCRM, 800);
+    });
+  });
+})();
 </script>
 </body>
 </html>
